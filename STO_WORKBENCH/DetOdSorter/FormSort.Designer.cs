@@ -2,109 +2,160 @@
 {
     partial class FormSort
     {
-        /// <summary>
-        /// Required designer variable.
-        /// </summary>
         private System.ComponentModel.IContainer components = null;
 
-        /// <summary>
-        /// Clean up any resources being used.
-        /// </summary>
-        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
         protected override void Dispose(bool disposing)
         {
             if (disposing && (components != null))
-            {
                 components.Dispose();
-            }
             base.Dispose(disposing);
         }
 
-        #region Windows Form Designer generated code
-
-        /// <summary>
-        /// Required method for Designer support - do not modify
-        /// the contents of this method with the code editor.
-        /// </summary>
         private void InitializeComponent()
         {
-            textBox1 = new TextBox();
-            buttonPath = new Button();
-            label1 = new Label();
-            richTextBox1 = new RichTextBox();
-            folderBrowserDialog1 = new FolderBrowserDialog();
-            buttonSort = new Button();
+            panelTop = new System.Windows.Forms.Panel();
+            lblTitle = new System.Windows.Forms.Label();
+            lblSubtitle = new System.Windows.Forms.Label();
+            panelControls = new System.Windows.Forms.Panel();
+            lblPathLabel = new System.Windows.Forms.Label();
+            textBox1 = new System.Windows.Forms.TextBox();
+            buttonPath = new System.Windows.Forms.Button();
+            buttonSort = new System.Windows.Forms.Button();
+            panelLog = new System.Windows.Forms.Panel();
+            lblLogTitle = new System.Windows.Forms.Label();
+            richTextBox1 = new System.Windows.Forms.RichTextBox();
+            folderBrowserDialog1 = new System.Windows.Forms.FolderBrowserDialog();
+
+            panelTop.SuspendLayout();
+            panelControls.SuspendLayout();
+            panelLog.SuspendLayout();
             SuspendLayout();
-            // 
-            // textBox1
-            // 
-            textBox1.Location = new Point(12, 27);
-            textBox1.Name = "textBox1";
-            textBox1.Size = new Size(658, 23);
-            textBox1.TabIndex = 0;
-            // 
-            // buttonPath
-            // 
-            buttonPath.Location = new Point(674, 27);
-            buttonPath.Name = "buttonPath";
-            buttonPath.Size = new Size(114, 23);
-            buttonPath.TabIndex = 1;
-            buttonPath.Text = "Путь к папке";
-            buttonPath.UseVisualStyleBackColor = true;
+
+            // ── panelTop (шапка) ──────────────────────────────────────────
+            panelTop.BackColor = System.Drawing.Color.FromArgb(22, 28, 40);
+            panelTop.Dock = System.Windows.Forms.DockStyle.Top;
+            panelTop.Height = 72;
+            panelTop.Padding = new System.Windows.Forms.Padding(20, 0, 0, 0);
+            panelTop.Controls.AddRange(new System.Windows.Forms.Control[]
+                { lblTitle, lblSubtitle });
+
+            lblTitle.Text = "📋  Сортировка детализаций";
+            lblTitle.Font = new System.Drawing.Font("Segoe UI", 13f, System.Drawing.FontStyle.Bold);
+            lblTitle.ForeColor = System.Drawing.Color.White;
+            lblTitle.Location = new System.Drawing.Point(20, 14);
+            lblTitle.Size = new System.Drawing.Size(500, 26);
+
+            lblSubtitle.Text = "Выберите папку и запустите сортировку файлов";
+            lblSubtitle.Font = new System.Drawing.Font("Segoe UI", 8.5f);
+            lblSubtitle.ForeColor = System.Drawing.Color.FromArgb(120, 140, 170);
+            lblSubtitle.Location = new System.Drawing.Point(20, 44);
+            lblSubtitle.Size = new System.Drawing.Size(500, 18);
+
+            // ── panelControls (поле пути + кнопки) ───────────────────────
+            panelControls.BackColor = System.Drawing.Color.FromArgb(242, 244, 248);
+            panelControls.Dock = System.Windows.Forms.DockStyle.Top;
+            panelControls.Height = 90;
+            panelControls.Padding = new System.Windows.Forms.Padding(20, 0, 20, 0);
+            panelControls.Controls.AddRange(new System.Windows.Forms.Control[]
+                { lblPathLabel, textBox1, buttonPath, buttonSort });
+
+            lblPathLabel.Text = "Папка с файлами:";
+            lblPathLabel.Font = new System.Drawing.Font("Segoe UI", 9f);
+            lblPathLabel.ForeColor = System.Drawing.Color.FromArgb(80, 90, 110);
+            lblPathLabel.Location = new System.Drawing.Point(20, 14);
+            lblPathLabel.Size = new System.Drawing.Size(140, 18);
+
+            textBox1.Location = new System.Drawing.Point(20, 36);
+            textBox1.Size = new System.Drawing.Size(530, 23);
+            textBox1.Font = new System.Drawing.Font("Segoe UI", 9.5f);
+            textBox1.BackColor = System.Drawing.Color.White;
+            textBox1.ForeColor = System.Drawing.Color.FromArgb(40, 40, 40);
+            textBox1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            textBox1.ReadOnly = true;
+
+            buttonPath.Text = "Обзор...";
+            buttonPath.Location = new System.Drawing.Point(558, 35);
+            buttonPath.Size = new System.Drawing.Size(90, 26);
+            buttonPath.Font = new System.Drawing.Font("Segoe UI", 9f);
+            buttonPath.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            buttonPath.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(180, 190, 210);
+            buttonPath.BackColor = System.Drawing.Color.White;
+            buttonPath.ForeColor = System.Drawing.Color.FromArgb(40, 40, 40);
             buttonPath.Click += buttonPath_Click;
-            // 
-            // label1
-            // 
-            label1.AutoSize = true;
-            label1.Location = new Point(12, 9);
-            label1.Name = "label1";
-            label1.Size = new Size(234, 15);
-            label1.TabIndex = 2;
-            label1.Text = "Выберите путь к файлам для сортировки";
-            // 
-            // richTextBox1
-            // 
-            richTextBox1.Dock = DockStyle.Bottom;
-            richTextBox1.Location = new Point(0, 111);
-            richTextBox1.Name = "richTextBox1";
-            richTextBox1.Size = new Size(800, 339);
-            richTextBox1.TabIndex = 3;
-            richTextBox1.Text = "";
-            // 
-            // buttonSort
-            // 
-            buttonSort.Font = new Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point, 204);
-            buttonSort.Location = new Point(674, 56);
-            buttonSort.Name = "buttonSort";
-            buttonSort.Size = new Size(116, 50);
-            buttonSort.TabIndex = 4;
-            buttonSort.Text = "Сортировать";
-            buttonSort.UseVisualStyleBackColor = true;
+
+            buttonSort.Text = "▶  Сортировать";
+            buttonSort.Location = new System.Drawing.Point(656, 35);
+            buttonSort.Size = new System.Drawing.Size(124, 26);
+            buttonSort.Font = new System.Drawing.Font("Segoe UI", 9f, System.Drawing.FontStyle.Bold);
+            buttonSort.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            buttonSort.FlatAppearance.BorderSize = 0;
+            buttonSort.BackColor = System.Drawing.Color.FromArgb(0, 122, 204);
+            buttonSort.ForeColor = System.Drawing.Color.White;
+            buttonSort.Enabled = false;
+            buttonSort.UseVisualStyleBackColor = false;
             buttonSort.Click += buttonSort_Click;
-            // 
-            // FormSort
-            // 
-            AutoScaleDimensions = new SizeF(7F, 15F);
-            AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(800, 450);
-            Controls.Add(buttonSort);
-            Controls.Add(richTextBox1);
-            Controls.Add(label1);
-            Controls.Add(buttonPath);
-            Controls.Add(textBox1);
+
+            // ── panelLog (лог) ────────────────────────────────────────────
+            panelLog.BackColor = System.Drawing.Color.FromArgb(235, 237, 242);
+            panelLog.Dock = System.Windows.Forms.DockStyle.Fill;
+            panelLog.Padding = new System.Windows.Forms.Padding(20, 8, 20, 16);
+            panelLog.Controls.AddRange(new System.Windows.Forms.Control[]
+                { lblLogTitle, richTextBox1 });
+
+            lblLogTitle.Text = "Лог выполнения";
+            lblLogTitle.Font = new System.Drawing.Font("Segoe UI", 8.5f, System.Drawing.FontStyle.Bold);
+            lblLogTitle.ForeColor = System.Drawing.Color.FromArgb(100, 110, 130);
+            lblLogTitle.Location = new System.Drawing.Point(20, 8);
+            lblLogTitle.Size = new System.Drawing.Size(200, 18);
+
+            richTextBox1.Location = new System.Drawing.Point(20, 30);
+            richTextBox1.Size = new System.Drawing.Size(760, 270);
+            richTextBox1.Anchor =
+                System.Windows.Forms.AnchorStyles.Top |
+                System.Windows.Forms.AnchorStyles.Bottom |
+                System.Windows.Forms.AnchorStyles.Left |
+                System.Windows.Forms.AnchorStyles.Right;
+            richTextBox1.Font = new System.Drawing.Font("Consolas", 9f);
+            richTextBox1.BackColor = System.Drawing.Color.FromArgb(24, 24, 24);
+            richTextBox1.ForeColor = System.Drawing.Color.FromArgb(180, 220, 180);
+            richTextBox1.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            richTextBox1.ReadOnly = true;
+            richTextBox1.ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.Vertical;
+
+            // ── Form ──────────────────────────────────────────────────────
+            AutoScaleDimensions = new System.Drawing.SizeF(7f, 15f);
+            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            ClientSize = new System.Drawing.Size(820, 500);
+            MinimumSize = new System.Drawing.Size(700, 420);
+            FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable;
+            StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
+            Text = "Сортировка детализаций";
             Name = "FormSort";
-            Text = "FormSort";
+            BackColor = System.Drawing.Color.FromArgb(242, 244, 248);
+
+            // Fill заполняет оставшееся место — добавляем первым
+            Controls.Add(panelLog);
+            Controls.Add(panelControls);
+            Controls.Add(panelTop);
+
+            panelTop.ResumeLayout(false);
+            panelControls.ResumeLayout(false);
+            panelLog.ResumeLayout(false);
             ResumeLayout(false);
             PerformLayout();
         }
 
-        #endregion
-
-        private TextBox textBox1;
-        private Button buttonPath;
-        private Label label1;
-        private RichTextBox richTextBox1;
-        private FolderBrowserDialog folderBrowserDialog1;
-        private Button buttonSort;
+        private System.Windows.Forms.Panel panelTop;
+        private System.Windows.Forms.Panel panelControls;
+        private System.Windows.Forms.Panel panelLog;
+        private System.Windows.Forms.Label lblTitle;
+        private System.Windows.Forms.Label lblSubtitle;
+        private System.Windows.Forms.Label lblPathLabel;
+        private System.Windows.Forms.Label lblLogTitle;
+        private System.Windows.Forms.TextBox textBox1;
+        private System.Windows.Forms.Button buttonPath;
+        private System.Windows.Forms.Button buttonSort;
+        private System.Windows.Forms.RichTextBox richTextBox1;
+        private System.Windows.Forms.FolderBrowserDialog folderBrowserDialog1;
     }
 }

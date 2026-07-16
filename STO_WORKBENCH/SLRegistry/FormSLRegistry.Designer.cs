@@ -2,193 +2,210 @@
 {
     partial class FormSLRegistry
     {
-        /// <summary>
-        /// Required designer variable.
-        /// </summary>
         private System.ComponentModel.IContainer components = null;
 
-        /// <summary>
-        /// Clean up any resources being used.
-        /// </summary>
-        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
         protected override void Dispose(bool disposing)
         {
             if (disposing && (components != null))
-            {
                 components.Dispose();
-            }
             base.Dispose(disposing);
         }
 
-        #region Windows Form Designer generated code
-
-        /// <summary>
-        /// Required method for Designer support - do not modify
-        /// the contents of this method with the code editor.
-        /// </summary>
         private void InitializeComponent()
         {
-            folderBrowserDialogSLRegistry = new FolderBrowserDialog();
-            panelLeft = new Panel();
-            buttonBuildAll = new Button();
-            panel1 = new Panel();
-            buttonPath = new Button();
-            textBoxPath = new TextBox();
-            labelPath = new Label();
-            textBoxProject = new TextBox();
-            labelProject = new Label();
-            textBoxPeriod = new TextBox();
-            labelPeriod = new Label();
-            richTextBoxLog = new RichTextBox();
-            panelLeft.SuspendLayout();
-            panel1.SuspendLayout();
+            panelTop = new System.Windows.Forms.Panel();
+            lblTitle = new System.Windows.Forms.Label();
+            lblSubtitle = new System.Windows.Forms.Label();
+            panelControls = new System.Windows.Forms.Panel();
+            grpParams = new System.Windows.Forms.GroupBox();
+            labelPeriod = new System.Windows.Forms.Label();
+            textBoxPeriod = new System.Windows.Forms.TextBox();
+            labelProject = new System.Windows.Forms.Label();
+            textBoxProject = new System.Windows.Forms.TextBox();
+            labelPath = new System.Windows.Forms.Label();
+            textBoxPath = new System.Windows.Forms.TextBox();
+            buttonPath = new System.Windows.Forms.Button();
+            buttonBuildAll = new System.Windows.Forms.Button();
+            panelLog = new System.Windows.Forms.Panel();
+            lblLogTitle = new System.Windows.Forms.Label();
+            richTextBoxLog = new System.Windows.Forms.RichTextBox();
+            folderBrowserDialogSLRegistry = new System.Windows.Forms.FolderBrowserDialog();
+
+            panelTop.SuspendLayout();
+            panelControls.SuspendLayout();
+            grpParams.SuspendLayout();
+            panelLog.SuspendLayout();
             SuspendLayout();
-            // 
-            // panelLeft
-            // 
-            panelLeft.BorderStyle = BorderStyle.FixedSingle;
-            panelLeft.Controls.Add(buttonBuildAll);
-            panelLeft.Controls.Add(panel1);
-            panelLeft.Controls.Add(labelPath);
-            panelLeft.Controls.Add(textBoxProject);
-            panelLeft.Controls.Add(labelProject);
-            panelLeft.Controls.Add(textBoxPeriod);
-            panelLeft.Controls.Add(labelPeriod);
-            panelLeft.Dock = DockStyle.Left;
-            panelLeft.Location = new Point(0, 0);
-            panelLeft.Name = "panelLeft";
-            panelLeft.Size = new Size(303, 450);
-            panelLeft.TabIndex = 4;
-            // 
-            // buttonBuildAll
-            // 
-            buttonBuildAll.Dock = DockStyle.Top;
-            buttonBuildAll.Font = new Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point, 204);
-            buttonBuildAll.Location = new Point(0, 153);
-            buttonBuildAll.Name = "buttonBuildAll";
-            buttonBuildAll.Size = new Size(301, 38);
-            buttonBuildAll.TabIndex = 11;
-            buttonBuildAll.Text = "Создать реестры";
-            buttonBuildAll.UseVisualStyleBackColor = true;
-            buttonBuildAll.Click += buttonBuildAll_Click;
-            // 
-            // panel1
-            // 
-            panel1.Controls.Add(buttonPath);
-            panel1.Controls.Add(textBoxPath);
-            panel1.Dock = DockStyle.Top;
-            panel1.Location = new Point(0, 121);
-            panel1.Name = "panel1";
-            panel1.Size = new Size(301, 32);
-            panel1.TabIndex = 9;
-            // 
-            // buttonPath
-            // 
-            buttonPath.Font = new Font("Segoe UI", 11.25F, FontStyle.Regular, GraphicsUnit.Point, 204);
-            buttonPath.Location = new Point(273, 0);
-            buttonPath.Name = "buttonPath";
-            buttonPath.Size = new Size(28, 29);
-            buttonPath.TabIndex = 5;
-            buttonPath.Text = "...";
-            buttonPath.UseVisualStyleBackColor = true;
-            buttonPath.Click += buttonPath_Click;
-            // 
-            // textBoxPath
-            // 
-            textBoxPath.Font = new Font("Segoe UI", 12F);
-            textBoxPath.Location = new Point(-1, 0);
-            textBoxPath.Name = "textBoxPath";
-            textBoxPath.Size = new Size(278, 29);
-            textBoxPath.TabIndex = 10;
-            // 
-            // labelPath
-            // 
-            labelPath.AutoSize = true;
-            labelPath.Dock = DockStyle.Top;
-            labelPath.Font = new Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point, 204);
-            labelPath.Location = new Point(0, 100);
-            labelPath.Name = "labelPath";
-            labelPath.Size = new Size(140, 21);
-            labelPath.TabIndex = 8;
-            labelPath.Text = "Название проекта";
-            // 
-            // textBoxProject
-            // 
-            textBoxProject.Dock = DockStyle.Top;
-            textBoxProject.Font = new Font("Segoe UI", 12F);
-            textBoxProject.Location = new Point(0, 71);
-            textBoxProject.Name = "textBoxProject";
-            textBoxProject.Size = new Size(301, 29);
-            textBoxProject.TabIndex = 7;
-            // 
-            // labelProject
-            // 
-            labelProject.AutoSize = true;
-            labelProject.Dock = DockStyle.Top;
-            labelProject.Font = new Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point, 204);
-            labelProject.Location = new Point(0, 50);
-            labelProject.Name = "labelProject";
-            labelProject.Size = new Size(140, 21);
-            labelProject.TabIndex = 6;
+
+            // ── panelTop (шапка) ──────────────────────────────────────────
+            panelTop.BackColor = System.Drawing.Color.FromArgb(22, 28, 40);
+            panelTop.Dock = System.Windows.Forms.DockStyle.Top;
+            panelTop.Height = 72;
+            panelTop.Controls.AddRange(new System.Windows.Forms.Control[]
+                { lblTitle, lblSubtitle });
+
+            lblTitle.Text = "📄  Сервисные листы — Реестр";
+            lblTitle.Font = new System.Drawing.Font("Segoe UI", 13f, System.Drawing.FontStyle.Bold);
+            lblTitle.ForeColor = System.Drawing.Color.White;
+            lblTitle.Location = new System.Drawing.Point(20, 14);
+            lblTitle.Size = new System.Drawing.Size(500, 26);
+
+            lblSubtitle.Text = "Заполните параметры и выберите папку с det_*.xls файлами";
+            lblSubtitle.Font = new System.Drawing.Font("Segoe UI", 8.5f);
+            lblSubtitle.ForeColor = System.Drawing.Color.FromArgb(120, 140, 170);
+            lblSubtitle.Location = new System.Drawing.Point(20, 44);
+            lblSubtitle.Size = new System.Drawing.Size(500, 18);
+
+            // ── panelControls ─────────────────────────────────────────────
+            panelControls.BackColor = System.Drawing.Color.FromArgb(242, 244, 248);
+            panelControls.Dock = System.Windows.Forms.DockStyle.Top;
+            panelControls.Height = 174;
+            panelControls.Padding = new System.Windows.Forms.Padding(16, 10, 16, 10);
+            panelControls.Controls.AddRange(new System.Windows.Forms.Control[]
+                { grpParams, buttonBuildAll });
+
+            // ── grpParams ─────────────────────────────────────────────────
+            grpParams.Text = "Параметры реестра";
+            grpParams.Font = new System.Drawing.Font("Segoe UI", 9f);
+            grpParams.Location = new System.Drawing.Point(16, 10);
+            grpParams.Size = new System.Drawing.Size(660, 148);
+            grpParams.ForeColor = System.Drawing.Color.FromArgb(80, 90, 110);
+            grpParams.Controls.AddRange(new System.Windows.Forms.Control[]
+            {
+                labelPeriod, textBoxPeriod,
+                labelProject, textBoxProject,
+                labelPath, textBoxPath, buttonPath
+            });
+
+            // Отчётный период
+            labelPeriod.Text = "Отчётный период";
+            labelPeriod.Font = new System.Drawing.Font("Segoe UI", 8.5f);
+            labelPeriod.ForeColor = System.Drawing.Color.FromArgb(80, 90, 110);
+            labelPeriod.Location = new System.Drawing.Point(12, 22);
+            labelPeriod.Size = new System.Drawing.Size(190, 16);
+
+            textBoxPeriod.Location = new System.Drawing.Point(12, 40);
+            textBoxPeriod.Size = new System.Drawing.Size(190, 23);
+            textBoxPeriod.Font = new System.Drawing.Font("Segoe UI", 9.5f);
+            textBoxPeriod.BackColor = System.Drawing.Color.White;
+            textBoxPeriod.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+
+            // Название проекта
             labelProject.Text = "Название проекта";
-            // 
-            // textBoxPeriod
-            // 
-            textBoxPeriod.Dock = DockStyle.Top;
-            textBoxPeriod.Font = new Font("Segoe UI", 12F);
-            textBoxPeriod.Location = new Point(0, 21);
-            textBoxPeriod.Name = "textBoxPeriod";
-            textBoxPeriod.Size = new Size(301, 29);
-            textBoxPeriod.TabIndex = 5;
-            // 
-            // labelPeriod
-            // 
-            labelPeriod.AutoSize = true;
-            labelPeriod.Dock = DockStyle.Top;
-            labelPeriod.Font = new Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point, 204);
-            labelPeriod.Location = new Point(0, 0);
-            labelPeriod.Name = "labelPeriod";
-            labelPeriod.Size = new Size(139, 21);
-            labelPeriod.TabIndex = 5;
-            labelPeriod.Text = "Отчетный период";
-            // 
-            // richTextBoxLog
-            // 
-            richTextBoxLog.Dock = DockStyle.Fill;
-            richTextBoxLog.Location = new Point(303, 0);
-            richTextBoxLog.Name = "richTextBoxLog";
-            richTextBoxLog.Size = new Size(497, 450);
-            richTextBoxLog.TabIndex = 5;
-            richTextBoxLog.Text = "";
-            // 
-            // FormSLRegistry
-            // 
-            AutoScaleDimensions = new SizeF(7F, 15F);
-            AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(800, 450);
-            Controls.Add(richTextBoxLog);
-            Controls.Add(panelLeft);
+            labelProject.Font = new System.Drawing.Font("Segoe UI", 8.5f);
+            labelProject.ForeColor = System.Drawing.Color.FromArgb(80, 90, 110);
+            labelProject.Location = new System.Drawing.Point(220, 22);
+            labelProject.Size = new System.Drawing.Size(190, 16);
+
+            textBoxProject.Location = new System.Drawing.Point(220, 40);
+            textBoxProject.Size = new System.Drawing.Size(190, 23);
+            textBoxProject.Font = new System.Drawing.Font("Segoe UI", 9.5f);
+            textBoxProject.BackColor = System.Drawing.Color.White;
+            textBoxProject.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+
+            // Папка с файлами
+            labelPath.Text = "Папка с det_*.xls файлами";
+            labelPath.Font = new System.Drawing.Font("Segoe UI", 8.5f);
+            labelPath.ForeColor = System.Drawing.Color.FromArgb(80, 90, 110);
+            labelPath.Location = new System.Drawing.Point(12, 80);
+            labelPath.Size = new System.Drawing.Size(300, 16);
+
+            textBoxPath.Location = new System.Drawing.Point(12, 98);
+            textBoxPath.Size = new System.Drawing.Size(554, 23);
+            textBoxPath.Font = new System.Drawing.Font("Segoe UI", 9.5f);
+            textBoxPath.BackColor = System.Drawing.Color.White;
+            textBoxPath.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            textBoxPath.ReadOnly = true;
+
+            buttonPath.Text = "Обзор...";
+            buttonPath.Location = new System.Drawing.Point(574, 97);
+            buttonPath.Size = new System.Drawing.Size(74, 26);
+            buttonPath.Font = new System.Drawing.Font("Segoe UI", 9f);
+            buttonPath.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            buttonPath.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(180, 190, 210);
+            buttonPath.BackColor = System.Drawing.Color.White;
+            buttonPath.ForeColor = System.Drawing.Color.FromArgb(40, 40, 40);
+            buttonPath.Click += buttonPath_Click;
+
+            // ── buttonBuildAll ────────────────────────────────────────────
+            buttonBuildAll.Text = "▶  Создать реестры";
+            buttonBuildAll.Location = new System.Drawing.Point(686, 10);
+            buttonBuildAll.Size = new System.Drawing.Size(148, 148);
+            buttonBuildAll.Font = new System.Drawing.Font("Segoe UI", 10f, System.Drawing.FontStyle.Bold);
+            buttonBuildAll.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            buttonBuildAll.FlatAppearance.BorderSize = 0;
+            buttonBuildAll.BackColor = System.Drawing.Color.FromArgb(0, 122, 204);
+            buttonBuildAll.ForeColor = System.Drawing.Color.White;
+            buttonBuildAll.Enabled = false;
+            buttonBuildAll.UseVisualStyleBackColor = false;
+            buttonBuildAll.Click += buttonBuildAll_Click;
+
+            // ── panelLog ──────────────────────────────────────────────────
+            panelLog.BackColor = System.Drawing.Color.FromArgb(235, 237, 242);
+            panelLog.Dock = System.Windows.Forms.DockStyle.Fill;
+            panelLog.Padding = new System.Windows.Forms.Padding(20, 8, 20, 16);
+            panelLog.Controls.AddRange(new System.Windows.Forms.Control[]
+                { lblLogTitle, richTextBoxLog });
+
+            lblLogTitle.Text = "Лог выполнения";
+            lblLogTitle.Font = new System.Drawing.Font("Segoe UI", 8.5f, System.Drawing.FontStyle.Bold);
+            lblLogTitle.ForeColor = System.Drawing.Color.FromArgb(100, 110, 130);
+            lblLogTitle.Location = new System.Drawing.Point(20, 8);
+            lblLogTitle.Size = new System.Drawing.Size(200, 18);
+
+            richTextBoxLog.Location = new System.Drawing.Point(20, 30);
+            richTextBoxLog.Size = new System.Drawing.Size(800, 200);
+            richTextBoxLog.Anchor =
+                System.Windows.Forms.AnchorStyles.Top |
+                System.Windows.Forms.AnchorStyles.Bottom |
+                System.Windows.Forms.AnchorStyles.Left |
+                System.Windows.Forms.AnchorStyles.Right;
+            richTextBoxLog.Font = new System.Drawing.Font("Consolas", 9f);
+            richTextBoxLog.BackColor = System.Drawing.Color.FromArgb(24, 24, 24);
+            richTextBoxLog.ForeColor = System.Drawing.Color.FromArgb(180, 220, 180);
+            richTextBoxLog.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            richTextBoxLog.ReadOnly = true;
+            richTextBoxLog.ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.Vertical;
+
+            // ── Form ──────────────────────────────────────────────────────
+            AutoScaleDimensions = new System.Drawing.SizeF(7f, 15f);
+            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            ClientSize = new System.Drawing.Size(860, 560);
+            MinimumSize = new System.Drawing.Size(720, 480);
+            FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable;
+            StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
+            Text = "Сервисные листы — Реестр";
             Name = "FormSLRegistry";
-            Text = "FormSLRegistry";
-            panelLeft.ResumeLayout(false);
-            panelLeft.PerformLayout();
-            panel1.ResumeLayout(false);
-            panel1.PerformLayout();
+            BackColor = System.Drawing.Color.FromArgb(242, 244, 248);
+
+            Controls.Add(panelLog);
+            Controls.Add(panelControls);
+            Controls.Add(panelTop);
+
+            panelTop.ResumeLayout(false);
+            panelControls.ResumeLayout(false);
+            grpParams.ResumeLayout(false);
+            panelLog.ResumeLayout(false);
             ResumeLayout(false);
+            PerformLayout();
         }
 
-        #endregion
-        private FolderBrowserDialog folderBrowserDialogSLRegistry;
-        private Panel panelLeft;
-        private TextBox textBoxProject;
-        private Label labelProject;
-        private TextBox textBoxPeriod;
-        private Label labelPeriod;
-        private Panel panel1;
-        private Button buttonPath;
-        private TextBox textBoxPath;
-        private Label labelPath;
-        private RichTextBox richTextBoxLog;
-        private Button buttonBuildAll;
+        private System.Windows.Forms.Panel panelTop;
+        private System.Windows.Forms.Panel panelControls;
+        private System.Windows.Forms.GroupBox grpParams;
+        private System.Windows.Forms.Panel panelLog;
+        private System.Windows.Forms.Label lblTitle;
+        private System.Windows.Forms.Label lblSubtitle;
+        private System.Windows.Forms.Label lblLogTitle;
+        private System.Windows.Forms.Label labelPeriod;
+        private System.Windows.Forms.Label labelProject;
+        private System.Windows.Forms.Label labelPath;
+        private System.Windows.Forms.TextBox textBoxPeriod;
+        private System.Windows.Forms.TextBox textBoxProject;
+        private System.Windows.Forms.TextBox textBoxPath;
+        private System.Windows.Forms.Button buttonPath;
+        private System.Windows.Forms.Button buttonBuildAll;
+        private System.Windows.Forms.RichTextBox richTextBoxLog;
+        private System.Windows.Forms.FolderBrowserDialog folderBrowserDialogSLRegistry;
     }
 }

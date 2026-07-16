@@ -1,531 +1,442 @@
-﻿namespace STO_WORKBENCH.PDFFiller
+﻿using Microsoft.Office.Interop.Excel;
+using STO_WORKBENCH.PDFFiller;
+
+namespace STO_WORKBENCH.PDFFiller
 {
     partial class FormPDFFiller
     {
-        /// <summary>
-        /// Обязательная переменная конструктора.
-        /// </summary>
         private System.ComponentModel.IContainer components = null;
 
-        /// <summary>
-        /// Освободить все используемые ресурсы.
-        /// </summary>
-        /// <param name="disposing">истинно, если управляемый ресурс должен быть удален; иначе ложно.</param>
         protected override void Dispose(bool disposing)
         {
             if (disposing && (components != null))
-            {
                 components.Dispose();
-            }
             base.Dispose(disposing);
         }
 
-        #region Код, автоматически созданный конструктором форм Windows
-
-        /// <summary>
-        /// Требуемый метод для поддержки конструктора — не изменяйте 
-        /// содержимое этого метода с помощью редактора кода.
-        /// </summary>
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
 
-            // Инициализация компонентов
-            this.buttonProcess = new System.Windows.Forms.Button();
-            this.dataGridViewFiles = new System.Windows.Forms.DataGridView();
-            this.columnFileName = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.columnSelected = new System.Windows.Forms.DataGridViewCheckBoxColumn();
-            this.menuStrip = new System.Windows.Forms.MenuStrip();
-            this.menuItemSettings = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuItemSettingsOpen = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuItemRefresh = new System.Windows.Forms.ToolStripMenuItem();
-            this.groupBoxMode = new System.Windows.Forms.GroupBox();
-            this.groupBoxOptions = new System.Windows.Forms.GroupBox();
-            this.checkBoxMonthYearOnly = new System.Windows.Forms.CheckBox();
-            this.checkBoxCustomDate = new System.Windows.Forms.CheckBox();
-            this.checkBoxCustomApplicant = new System.Windows.Forms.CheckBox();
-            this.radioButtonProcessAll = new System.Windows.Forms.RadioButton();
-            this.radioButtonProcessSingle = new System.Windows.Forms.RadioButton();
-            this.panelSettings = new System.Windows.Forms.Panel();
-            this.panelApplicant = new System.Windows.Forms.Panel();
-            this.labelPatronymic = new System.Windows.Forms.Label();
-            this.labelFirstName = new System.Windows.Forms.Label();
-            this.labelLastName = new System.Windows.Forms.Label();
-            this.textBoxApplicantPatronymic = new System.Windows.Forms.TextBox();
-            this.textBoxApplicantFirstName = new System.Windows.Forms.TextBox();
-            this.textBoxApplicantLastName = new System.Windows.Forms.TextBox();
-            this.panelDateTime = new System.Windows.Forms.Panel();
-            this.maskedTextBoxTime = new System.Windows.Forms.MaskedTextBox();
-            this.labelDateTime = new System.Windows.Forms.Label();
-            this.dateTimePickerDate = new System.Windows.Forms.DateTimePicker();
-            this.labelTime = new System.Windows.Forms.Label();
-            this.timerRefresh = new System.Windows.Forms.Timer(this.components);
-            this.progressBar = new System.Windows.Forms.ProgressBar();
-            this.statusStrip = new System.Windows.Forms.StatusStrip();
-            this.statusLabel = new System.Windows.Forms.ToolStripStatusLabel();
-            this.statusLabelCount = new System.Windows.Forms.ToolStripStatusLabel();
+            // Контролы
+            menuStrip = new System.Windows.Forms.MenuStrip();
+            menuItemSettings = new System.Windows.Forms.ToolStripMenuItem();
+            menuItemSettingsOpen = new System.Windows.Forms.ToolStripMenuItem();
+            menuItemRefresh = new System.Windows.Forms.ToolStripMenuItem();
+            panelTop = new System.Windows.Forms.Panel();
+            lblTitle = new System.Windows.Forms.Label();
+            lblSubtitle = new System.Windows.Forms.Label();
+            panelMain = new System.Windows.Forms.Panel();
+            panelGrid = new System.Windows.Forms.Panel();
+            lblFilesTitle = new System.Windows.Forms.Label();
+            dataGridViewFiles = new System.Windows.Forms.DataGridView();
+            columnFileName = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            columnSelected = new System.Windows.Forms.DataGridViewCheckBoxColumn();
+            progressBar = new System.Windows.Forms.ProgressBar();
+            panelRight = new System.Windows.Forms.Panel();
+            groupBoxMode = new System.Windows.Forms.GroupBox();
+            radioButtonProcessAll = new System.Windows.Forms.RadioButton();
+            radioButtonProcessSingle = new System.Windows.Forms.RadioButton();
+            groupBoxOptions = new System.Windows.Forms.GroupBox();
+            checkBoxCustomDate = new System.Windows.Forms.CheckBox();
+            checkBoxMonthYearOnly = new System.Windows.Forms.CheckBox();
+            checkBoxCustomApplicant = new System.Windows.Forms.CheckBox();
+            panelSettings = new System.Windows.Forms.Panel();
+            panelDateTime = new System.Windows.Forms.Panel();
+            lblDateTimeHeader = new System.Windows.Forms.Label();
+            labelDateTime = new System.Windows.Forms.Label();
+            dateTimePickerDate = new System.Windows.Forms.DateTimePicker();
+            labelTime = new System.Windows.Forms.Label();
+            maskedTextBoxTime = new System.Windows.Forms.MaskedTextBox();
+            panelApplicant = new System.Windows.Forms.Panel();
+            lblApplicantHeader = new System.Windows.Forms.Label();
+            labelLastName = new System.Windows.Forms.Label();
+            textBoxApplicantLastName = new System.Windows.Forms.TextBox();
+            labelFirstName = new System.Windows.Forms.Label();
+            textBoxApplicantFirstName = new System.Windows.Forms.TextBox();
+            labelPatronymic = new System.Windows.Forms.Label();
+            textBoxApplicantPatronymic = new System.Windows.Forms.TextBox();
+            buttonProcess = new System.Windows.Forms.Button();
+            statusStrip = new System.Windows.Forms.StatusStrip();
+            statusLabel = new System.Windows.Forms.ToolStripStatusLabel();
+            statusLabelCount = new System.Windows.Forms.ToolStripStatusLabel();
+            timerRefresh = new System.Windows.Forms.Timer(this.components);
 
-            ((System.ComponentModel.ISupportInitialize)(this.dataGridViewFiles)).BeginInit();
-            this.menuStrip.SuspendLayout();
-            this.groupBoxMode.SuspendLayout();
-            this.groupBoxOptions.SuspendLayout();
-            this.panelSettings.SuspendLayout();
-            this.panelApplicant.SuspendLayout();
-            this.panelDateTime.SuspendLayout();
-            this.statusStrip.SuspendLayout();
-            this.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)dataGridViewFiles).BeginInit();
+            menuStrip.SuspendLayout();
+            panelTop.SuspendLayout();
+            panelMain.SuspendLayout();
+            panelGrid.SuspendLayout();
+            panelRight.SuspendLayout();
+            groupBoxMode.SuspendLayout();
+            groupBoxOptions.SuspendLayout();
+            panelSettings.SuspendLayout();
+            panelDateTime.SuspendLayout();
+            panelApplicant.SuspendLayout();
+            statusStrip.SuspendLayout();
+            SuspendLayout();
 
-            // 
-            // buttonProcess
-            // 
-            this.buttonProcess.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.buttonProcess.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.buttonProcess.Location = new System.Drawing.Point(572, 479);
-            this.buttonProcess.Name = "buttonProcess";
-            this.buttonProcess.Size = new System.Drawing.Size(300, 40);
-            this.buttonProcess.TabIndex = 0;
-            this.buttonProcess.Text = "Обработать СЛ";
-            this.buttonProcess.UseVisualStyleBackColor = true;
-            this.buttonProcess.Click += new System.EventHandler(this.buttonProcess_Click);
+            // ── menuStrip ─────────────────────────────────────────────────
+            menuStrip.BackColor = System.Drawing.Color.FromArgb(22, 28, 40);
+            menuStrip.ForeColor = System.Drawing.Color.White;
+            menuStrip.Dock = System.Windows.Forms.DockStyle.Top;
+            menuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[]
+                { menuItemSettings, menuItemRefresh });
 
-            // 
-            // dataGridViewFiles
-            // 
-            this.dataGridViewFiles.AllowUserToAddRows = false;
-            this.dataGridViewFiles.AllowUserToDeleteRows = false;
-            this.dataGridViewFiles.AllowUserToResizeRows = false;
-            this.dataGridViewFiles.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-            | System.Windows.Forms.AnchorStyles.Left)
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.dataGridViewFiles.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
-            this.dataGridViewFiles.BackgroundColor = System.Drawing.Color.White;
-            this.dataGridViewFiles.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
-            this.dataGridViewFiles.CellBorderStyle = System.Windows.Forms.DataGridViewCellBorderStyle.SingleHorizontal;
-            this.dataGridViewFiles.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dataGridViewFiles.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
-                this.columnFileName,
-                this.columnSelected});
-            this.dataGridViewFiles.GridColor = System.Drawing.SystemColors.ControlLight;
-            this.dataGridViewFiles.Location = new System.Drawing.Point(12, 27);
-            this.dataGridViewFiles.MultiSelect = false;
-            this.dataGridViewFiles.Name = "dataGridViewFiles";
-            this.dataGridViewFiles.RowHeadersVisible = false;
-            this.dataGridViewFiles.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            this.dataGridViewFiles.Size = new System.Drawing.Size(550, 487);
-            this.dataGridViewFiles.TabIndex = 1;
-            this.dataGridViewFiles.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dataGridViewFiles_CellContentClick);
-            this.dataGridViewFiles.CellDoubleClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dataGridViewFiles_CellDoubleClick);
+            menuItemSettings.Text = "Настройки";
+            menuItemSettings.ForeColor = System.Drawing.Color.FromArgb(190, 200, 220);
+            menuItemSettings.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[]
+                { menuItemSettingsOpen });
 
-            // 
-            // columnFileName
-            // 
-            this.columnFileName.FillWeight = 70F;
-            this.columnFileName.HeaderText = "Имя файла";
-            this.columnFileName.Name = "columnFileName";
-            this.columnFileName.ReadOnly = true;
+            menuItemSettingsOpen.Text = "Открыть настройки";
+            menuItemSettingsOpen.ShortcutKeys = System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.S;
+            menuItemSettingsOpen.Click += menuItemSettingsOpen_Click;
 
-            // 
-            // columnSelected
-            // 
-            this.columnSelected.FillWeight = 30F;
-            this.columnSelected.HeaderText = "Выбрать";
-            this.columnSelected.Name = "columnSelected";
-            this.columnSelected.Resizable = System.Windows.Forms.DataGridViewTriState.False;
+            menuItemRefresh.Text = "Обновить таблицу";
+            menuItemRefresh.ForeColor = System.Drawing.Color.FromArgb(190, 200, 220);
+            menuItemRefresh.ShortcutKeys = System.Windows.Forms.Keys.F5;
+            menuItemRefresh.Click += menuItemRefresh_Click;
 
-            // 
-            // menuStrip
-            // 
-            this.menuStrip.BackColor = System.Drawing.Color.White;
-            this.menuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-                this.menuItemSettings,
-                this.menuItemRefresh});
-            this.menuStrip.Location = new System.Drawing.Point(0, 0);
-            this.menuStrip.Name = "menuStrip";
-            this.menuStrip.Size = new System.Drawing.Size(884, 24);
-            this.menuStrip.TabIndex = 2;
+            // ── panelTop (шапка) ──────────────────────────────────────────
+            panelTop.BackColor = System.Drawing.Color.FromArgb(22, 28, 40);
+            panelTop.Dock = System.Windows.Forms.DockStyle.Top;
+            panelTop.Height = 72;
+            panelTop.Controls.AddRange(new System.Windows.Forms.Control[]
+                { lblTitle, lblSubtitle });
 
-            // 
-            // menuItemSettings
-            // 
-            this.menuItemSettings.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-                this.menuItemSettingsOpen});
-            this.menuItemSettings.Name = "menuItemSettings";
-            this.menuItemSettings.Size = new System.Drawing.Size(79, 20);
-            this.menuItemSettings.Text = "Настройки";
+            lblTitle.Text = "✍  Автозаполнение сервисных листов";
+            lblTitle.Font = new System.Drawing.Font("Segoe UI", 13f, System.Drawing.FontStyle.Bold);
+            lblTitle.ForeColor = System.Drawing.Color.White;
+            lblTitle.Location = new System.Drawing.Point(20, 14);
+            lblTitle.Size = new System.Drawing.Size(600, 26);
 
-            // 
-            // menuItemSettingsOpen
-            // 
-            this.menuItemSettingsOpen.Name = "menuItemSettingsOpen";
-            this.menuItemSettingsOpen.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.S)));
-            this.menuItemSettingsOpen.Size = new System.Drawing.Size(200, 22);
-            this.menuItemSettingsOpen.Text = "Открыть настройки";
-            this.menuItemSettingsOpen.Click += new System.EventHandler(this.menuItemSettingsOpen_Click);
+            lblSubtitle.Text = "Выберите файлы, настройте параметры и запустите обработку";
+            lblSubtitle.Font = new System.Drawing.Font("Segoe UI", 8.5f);
+            lblSubtitle.ForeColor = System.Drawing.Color.FromArgb(120, 140, 170);
+            lblSubtitle.Location = new System.Drawing.Point(20, 44);
+            lblSubtitle.Size = new System.Drawing.Size(600, 18);
 
-            // 
-            // menuItemRefresh
-            // 
-            this.menuItemRefresh.Name = "menuItemRefresh";
-            this.menuItemRefresh.ShortcutKeys = System.Windows.Forms.Keys.F5;
-            this.menuItemRefresh.Size = new System.Drawing.Size(121, 20);
-            this.menuItemRefresh.Text = "Обновить таблицу";
-            this.menuItemRefresh.Click += new System.EventHandler(this.menuItemRefresh_Click);
+            // ── panelMain (всё тело формы под шапкой) ────────────────────
+            panelMain.Dock = System.Windows.Forms.DockStyle.Fill;
+            panelMain.BackColor = System.Drawing.Color.FromArgb(242, 244, 248);
+            panelMain.Padding = new System.Windows.Forms.Padding(16);
+            panelMain.Controls.AddRange(new System.Windows.Forms.Control[]
+                { panelGrid, panelRight });
 
-            // 
-            // groupBoxMode
-            // 
-            this.groupBoxMode.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.groupBoxMode.Controls.Add(this.groupBoxOptions);
-            this.groupBoxMode.Controls.Add(this.radioButtonProcessSingle);
-            this.groupBoxMode.Controls.Add(this.radioButtonProcessAll);
-            this.groupBoxMode.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.groupBoxMode.Location = new System.Drawing.Point(572, 27);
-            this.groupBoxMode.Name = "groupBoxMode";
-            this.groupBoxMode.Size = new System.Drawing.Size(300, 170);
-            this.groupBoxMode.TabIndex = 3;
-            this.groupBoxMode.TabStop = false;
-            this.groupBoxMode.Text = "Режим заполнения";
+            // ── panelGrid (левая колонка — таблица + прогресс) ───────────
+            panelGrid.BackColor = System.Drawing.Color.Transparent;
+            panelGrid.Dock = System.Windows.Forms.DockStyle.Fill;
+            panelGrid.Padding = new System.Windows.Forms.Padding(0, 0, 12, 0);
+            panelGrid.Controls.AddRange(new System.Windows.Forms.Control[]
+                { lblFilesTitle, dataGridViewFiles, progressBar });
 
-            // 
-            // groupBoxOptions
-            // 
-            this.groupBoxOptions.Controls.Add(this.checkBoxMonthYearOnly);
-            this.groupBoxOptions.Controls.Add(this.checkBoxCustomDate);
-            this.groupBoxOptions.Controls.Add(this.checkBoxCustomApplicant);
-            this.groupBoxOptions.Location = new System.Drawing.Point(6, 72);
-            this.groupBoxOptions.Name = "groupBoxOptions";
-            this.groupBoxOptions.Size = new System.Drawing.Size(288, 92);
-            this.groupBoxOptions.TabIndex = 4;
-            this.groupBoxOptions.TabStop = false;
-            this.groupBoxOptions.Text = "Опции";
+            lblFilesTitle.Text = "Список PDF-файлов";
+            lblFilesTitle.Font = new System.Drawing.Font("Segoe UI", 8.5f, System.Drawing.FontStyle.Bold);
+            lblFilesTitle.ForeColor = System.Drawing.Color.FromArgb(100, 110, 130);
+            lblFilesTitle.Dock = System.Windows.Forms.DockStyle.Top;
+            lblFilesTitle.Height = 24;
+            lblFilesTitle.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
 
-            // 
-            // checkBoxMonthYearOnly
-            // 
-            this.checkBoxMonthYearOnly.AutoSize = true;
-            this.checkBoxMonthYearOnly.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.checkBoxMonthYearOnly.Location = new System.Drawing.Point(6, 62);
-            this.checkBoxMonthYearOnly.Name = "checkBoxMonthYearOnly";
-            this.checkBoxMonthYearOnly.Size = new System.Drawing.Size(202, 19);
-            this.checkBoxMonthYearOnly.TabIndex = 4;
-            this.checkBoxMonthYearOnly.Text = "Заполнить только месяц и год";
-            this.checkBoxMonthYearOnly.UseVisualStyleBackColor = true;
-            this.checkBoxMonthYearOnly.CheckedChanged += new System.EventHandler(this.checkBoxMonthYearOnly_CheckedChanged);
+            dataGridViewFiles.Dock = System.Windows.Forms.DockStyle.Fill;
+            dataGridViewFiles.AllowUserToAddRows = false;
+            dataGridViewFiles.AllowUserToDeleteRows = false;
+            dataGridViewFiles.AllowUserToResizeRows = false;
+            dataGridViewFiles.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
+            dataGridViewFiles.BackgroundColor = System.Drawing.Color.White;
+            dataGridViewFiles.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            dataGridViewFiles.CellBorderStyle = System.Windows.Forms.DataGridViewCellBorderStyle.SingleHorizontal;
+            dataGridViewFiles.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dataGridViewFiles.GridColor = System.Drawing.Color.FromArgb(220, 225, 235);
+            dataGridViewFiles.MultiSelect = false;
+            dataGridViewFiles.RowHeadersVisible = false;
+            dataGridViewFiles.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
+            dataGridViewFiles.Font = new System.Drawing.Font("Segoe UI", 9.5f);
+            dataGridViewFiles.ColumnHeadersDefaultCellStyle.BackColor = System.Drawing.Color.FromArgb(28, 35, 49);
+            dataGridViewFiles.ColumnHeadersDefaultCellStyle.ForeColor = System.Drawing.Color.White;
+            dataGridViewFiles.ColumnHeadersDefaultCellStyle.Font = new System.Drawing.Font("Segoe UI", 9f, System.Drawing.FontStyle.Bold);
+            dataGridViewFiles.EnableHeadersVisualStyles = false;
+            dataGridViewFiles.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[]
+                { columnFileName, columnSelected });
+            dataGridViewFiles.CellContentClick += dataGridViewFiles_CellContentClick;
+            dataGridViewFiles.CellDoubleClick += dataGridViewFiles_CellDoubleClick;
 
-            // 
-            // checkBoxCustomDate
-            // 
-            this.checkBoxCustomDate.AutoSize = true;
-            this.checkBoxCustomDate.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.checkBoxCustomDate.Location = new System.Drawing.Point(6, 25);
-            this.checkBoxCustomDate.Name = "checkBoxCustomDate";
-            this.checkBoxCustomDate.Size = new System.Drawing.Size(82, 19);
-            this.checkBoxCustomDate.TabIndex = 2;
-            this.checkBoxCustomDate.Text = "Своя дата";
-            this.checkBoxCustomDate.UseVisualStyleBackColor = true;
-            this.checkBoxCustomDate.CheckedChanged += new System.EventHandler(this.checkBoxCustomDate_CheckedChanged);
+            columnFileName.HeaderText = "Имя файла";
+            columnFileName.Name = "columnFileName";
+            columnFileName.ReadOnly = true;
+            columnFileName.FillWeight = 75f;
 
-            // 
-            // checkBoxCustomApplicant
-            // 
-            this.checkBoxCustomApplicant.AutoSize = true;
-            this.checkBoxCustomApplicant.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.checkBoxCustomApplicant.Location = new System.Drawing.Point(6, 44);
-            this.checkBoxCustomApplicant.Name = "checkBoxCustomApplicant";
-            this.checkBoxCustomApplicant.Size = new System.Drawing.Size(113, 19);
-            this.checkBoxCustomApplicant.TabIndex = 3;
-            this.checkBoxCustomApplicant.Text = "Свой заявитель";
-            this.checkBoxCustomApplicant.UseVisualStyleBackColor = true;
-            this.checkBoxCustomApplicant.CheckedChanged += new System.EventHandler(this.checkBoxCustomApplicant_CheckedChanged);
+            columnSelected.HeaderText = "✔";
+            columnSelected.Name = "columnSelected";
+            columnSelected.FillWeight = 25f;
+            columnSelected.Resizable = System.Windows.Forms.DataGridViewTriState.False;
 
-            // 
-            // radioButtonProcessAll
-            // 
-            this.radioButtonProcessAll.AutoSize = true;
-            this.radioButtonProcessAll.Checked = true;
-            this.radioButtonProcessAll.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.radioButtonProcessAll.Location = new System.Drawing.Point(6, 25);
-            this.radioButtonProcessAll.Name = "radioButtonProcessAll";
-            this.radioButtonProcessAll.Size = new System.Drawing.Size(161, 19);
-            this.radioButtonProcessAll.TabIndex = 0;
-            this.radioButtonProcessAll.TabStop = true;
-            this.radioButtonProcessAll.Text = "Все выбранные файлы";
-            this.radioButtonProcessAll.UseVisualStyleBackColor = true;
+            progressBar.Dock = System.Windows.Forms.DockStyle.Bottom;
+            progressBar.Height = 6;
+            progressBar.Visible = false;
+            progressBar.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
+            progressBar.BackColor = System.Drawing.Color.FromArgb(220, 225, 235);
+            progressBar.ForeColor = System.Drawing.Color.FromArgb(0, 122, 204);
 
-            // 
-            // radioButtonProcessSingle
-            // 
-            this.radioButtonProcessSingle.AutoSize = true;
-            this.radioButtonProcessSingle.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.radioButtonProcessSingle.Location = new System.Drawing.Point(6, 47);
-            this.radioButtonProcessSingle.Name = "radioButtonProcessSingle";
-            this.radioButtonProcessSingle.Size = new System.Drawing.Size(131, 19);
-            this.radioButtonProcessSingle.TabIndex = 1;
-            this.radioButtonProcessSingle.Text = "Только текущий";
-            this.radioButtonProcessSingle.UseVisualStyleBackColor = true;
+            // ── panelRight (правая колонка — настройки + кнопка) ─────────
+            panelRight.BackColor = System.Drawing.Color.Transparent;
+            panelRight.Dock = System.Windows.Forms.DockStyle.Right;
+            panelRight.Width = 300;
+            panelRight.Controls.AddRange(new System.Windows.Forms.Control[]
+                { groupBoxMode, panelSettings, buttonProcess });
 
-            // 
-            // panelSettings
-            // 
-            this.panelSettings.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.panelSettings.Controls.Add(this.panelApplicant);
-            this.panelSettings.Controls.Add(this.panelDateTime);
-            this.panelSettings.Location = new System.Drawing.Point(572, 203);
-            this.panelSettings.Name = "panelSettings";
-            this.panelSettings.Size = new System.Drawing.Size(300, 270);
-            this.panelSettings.TabIndex = 5;
+            // ── groupBoxMode ──────────────────────────────────────────────
+            groupBoxMode.Text = "Режим обработки";
+            groupBoxMode.Font = new System.Drawing.Font("Segoe UI", 9f);
+            groupBoxMode.ForeColor = System.Drawing.Color.FromArgb(80, 90, 110);
+            groupBoxMode.Dock = System.Windows.Forms.DockStyle.Top;
+            groupBoxMode.Height = 180;
+            groupBoxMode.Padding = new System.Windows.Forms.Padding(10, 6, 10, 6);
+            groupBoxMode.Controls.AddRange(new System.Windows.Forms.Control[]
+                { radioButtonProcessAll, radioButtonProcessSingle, groupBoxOptions });
 
-            // 
-            // panelApplicant
-            // 
-            this.panelApplicant.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.panelApplicant.Controls.Add(this.labelPatronymic);
-            this.panelApplicant.Controls.Add(this.labelFirstName);
-            this.panelApplicant.Controls.Add(this.labelLastName);
-            this.panelApplicant.Controls.Add(this.textBoxApplicantPatronymic);
-            this.panelApplicant.Controls.Add(this.textBoxApplicantFirstName);
-            this.panelApplicant.Controls.Add(this.textBoxApplicantLastName);
-            this.panelApplicant.Dock = System.Windows.Forms.DockStyle.Top;
-            this.panelApplicant.Location = new System.Drawing.Point(0, 75);
-            this.panelApplicant.Name = "panelApplicant";
-            this.panelApplicant.Padding = new System.Windows.Forms.Padding(5);
-            this.panelApplicant.Size = new System.Drawing.Size(300, 110);
-            this.panelApplicant.TabIndex = 6;
-            this.panelApplicant.Visible = false;
+            radioButtonProcessAll.Text = "Все выбранные файлы";
+            radioButtonProcessAll.Font = new System.Drawing.Font("Segoe UI", 9f);
+            radioButtonProcessAll.Location = new System.Drawing.Point(12, 24);
+            radioButtonProcessAll.Size = new System.Drawing.Size(270, 20);
+            radioButtonProcessAll.Checked = true;
 
-            // 
-            // labelPatronymic
-            // 
-            this.labelPatronymic.AutoSize = true;
-            this.labelPatronymic.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.labelPatronymic.Location = new System.Drawing.Point(8, 81);
-            this.labelPatronymic.Name = "labelPatronymic";
-            this.labelPatronymic.Size = new System.Drawing.Size(58, 15);
-            this.labelPatronymic.TabIndex = 10;
-            this.labelPatronymic.Text = "Отчество";
+            radioButtonProcessSingle.Text = "Только текущий (выделенный)";
+            radioButtonProcessSingle.Font = new System.Drawing.Font("Segoe UI", 9f);
+            radioButtonProcessSingle.Location = new System.Drawing.Point(12, 48);
+            radioButtonProcessSingle.Size = new System.Drawing.Size(270, 20);
 
-            // 
-            // labelFirstName
-            // 
-            this.labelFirstName.AutoSize = true;
-            this.labelFirstName.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.labelFirstName.Location = new System.Drawing.Point(8, 53);
-            this.labelFirstName.Name = "labelFirstName";
-            this.labelFirstName.Size = new System.Drawing.Size(31, 15);
-            this.labelFirstName.TabIndex = 9;
-            this.labelFirstName.Text = "Имя";
+            groupBoxOptions.Text = "Опции заполнения";
+            groupBoxOptions.Font = new System.Drawing.Font("Segoe UI", 9f);
+            groupBoxOptions.ForeColor = System.Drawing.Color.FromArgb(80, 90, 110);
+            groupBoxOptions.Location = new System.Drawing.Point(10, 74);
+            groupBoxOptions.Size = new System.Drawing.Size(276, 92);
+            groupBoxOptions.Controls.AddRange(new System.Windows.Forms.Control[]
+                { checkBoxCustomDate, checkBoxMonthYearOnly, checkBoxCustomApplicant });
 
-            // 
-            // labelLastName
-            // 
-            this.labelLastName.AutoSize = true;
-            this.labelLastName.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.labelLastName.Location = new System.Drawing.Point(8, 8);
-            this.labelLastName.Name = "labelLastName";
-            this.labelLastName.Size = new System.Drawing.Size(58, 15);
-            this.labelLastName.TabIndex = 8;
-            this.labelLastName.Text = "Фамилия";
+            checkBoxCustomDate.Text = "Своя дата";
+            checkBoxCustomDate.Font = new System.Drawing.Font("Segoe UI", 9f);
+            checkBoxCustomDate.Location = new System.Drawing.Point(10, 22);
+            checkBoxCustomDate.AutoSize = true;
+            checkBoxCustomDate.CheckedChanged += checkBoxCustomDate_CheckedChanged;
 
-            // 
-            // textBoxApplicantPatronymic
-            // 
-            this.textBoxApplicantPatronymic.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.textBoxApplicantPatronymic.Location = new System.Drawing.Point(90, 78);
-            this.textBoxApplicantPatronymic.Name = "textBoxApplicantPatronymic";
-            this.textBoxApplicantPatronymic.Size = new System.Drawing.Size(196, 23);
-            this.textBoxApplicantPatronymic.TabIndex = 2;
+            checkBoxMonthYearOnly.Text = "Только месяц и год";
+            checkBoxMonthYearOnly.Font = new System.Drawing.Font("Segoe UI", 9f);
+            checkBoxMonthYearOnly.Location = new System.Drawing.Point(10, 46);
+            checkBoxMonthYearOnly.AutoSize = true;
+            checkBoxMonthYearOnly.CheckedChanged += checkBoxMonthYearOnly_CheckedChanged;
 
-            // 
-            // textBoxApplicantFirstName
-            // 
-            this.textBoxApplicantFirstName.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.textBoxApplicantFirstName.Location = new System.Drawing.Point(90, 50);
-            this.textBoxApplicantFirstName.Name = "textBoxApplicantFirstName";
-            this.textBoxApplicantFirstName.Size = new System.Drawing.Size(196, 23);
-            this.textBoxApplicantFirstName.TabIndex = 1;
+            checkBoxCustomApplicant.Text = "Свой заявитель";
+            checkBoxCustomApplicant.Font = new System.Drawing.Font("Segoe UI", 9f);
+            checkBoxCustomApplicant.Location = new System.Drawing.Point(10, 68);
+            checkBoxCustomApplicant.AutoSize = true;
+            checkBoxCustomApplicant.CheckedChanged += checkBoxCustomApplicant_CheckedChanged;
 
-            // 
-            // textBoxApplicantLastName
-            // 
-            this.textBoxApplicantLastName.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.textBoxApplicantLastName.Location = new System.Drawing.Point(90, 5);
-            this.textBoxApplicantLastName.Name = "textBoxApplicantLastName";
-            this.textBoxApplicantLastName.Size = new System.Drawing.Size(196, 23);
-            this.textBoxApplicantLastName.TabIndex = 0;
+            // ── panelSettings (динамические панели дата/заявитель) ────────
+            panelSettings.Dock = System.Windows.Forms.DockStyle.Top;
+            panelSettings.Height = 200;
+            panelSettings.BackColor = System.Drawing.Color.Transparent;
+            panelSettings.Controls.AddRange(new System.Windows.Forms.Control[]
+                { panelDateTime, panelApplicant });
 
-            // 
-            // panelDateTime
-            // 
-            this.panelDateTime.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.panelDateTime.Controls.Add(this.labelTime);
-            this.panelDateTime.Controls.Add(this.maskedTextBoxTime);
-            this.panelDateTime.Controls.Add(this.labelDateTime);
-            this.panelDateTime.Controls.Add(this.dateTimePickerDate);
-            this.panelDateTime.Dock = System.Windows.Forms.DockStyle.Top;
-            this.panelDateTime.Location = new System.Drawing.Point(0, 0);
-            this.panelDateTime.Name = "panelDateTime";
-            this.panelDateTime.Padding = new System.Windows.Forms.Padding(5);
-            this.panelDateTime.Size = new System.Drawing.Size(300, 75);
-            this.panelDateTime.TabIndex = 5;
-            this.panelDateTime.Visible = false;
+            // ── panelDateTime ─────────────────────────────────────────────
+            panelDateTime.Dock = System.Windows.Forms.DockStyle.Top;
+            panelDateTime.Height = 96;
+            panelDateTime.BackColor = System.Drawing.Color.White;
+            panelDateTime.Padding = new System.Windows.Forms.Padding(12, 8, 12, 8);
+            panelDateTime.Visible = false;
+            panelDateTime.Controls.AddRange(new System.Windows.Forms.Control[]
+            {
+                lblDateTimeHeader, labelDateTime,
+                dateTimePickerDate, labelTime, maskedTextBoxTime
+            });
 
-            // 
-            // labelTime
-            // 
-            this.labelTime.AutoSize = true;
-            this.labelTime.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.labelTime.Location = new System.Drawing.Point(193, 28);
-            this.labelTime.Name = "labelTime";
-            this.labelTime.Size = new System.Drawing.Size(42, 15);
-            this.labelTime.TabIndex = 9;
-            this.labelTime.Text = "Время";
+            lblDateTimeHeader.Text = "ДАТА И ВРЕМЯ";
+            lblDateTimeHeader.Font = new System.Drawing.Font("Segoe UI", 7.5f, System.Drawing.FontStyle.Bold);
+            lblDateTimeHeader.ForeColor = System.Drawing.Color.FromArgb(0, 122, 204);
+            lblDateTimeHeader.Location = new System.Drawing.Point(12, 8);
+            lblDateTimeHeader.Size = new System.Drawing.Size(270, 14);
 
-            // 
-            // maskedTextBoxTime
-            // 
-            this.maskedTextBoxTime.Font = new System.Drawing.Font("Segoe UI", 10F);
-            this.maskedTextBoxTime.Location = new System.Drawing.Point(196, 45);
-            this.maskedTextBoxTime.Mask = "00:00";
-            this.maskedTextBoxTime.Name = "maskedTextBoxTime";
-            this.maskedTextBoxTime.Size = new System.Drawing.Size(60, 25);
-            this.maskedTextBoxTime.TabIndex = 8;
-            this.maskedTextBoxTime.Text = "1200";
-            this.maskedTextBoxTime.ValidatingType = typeof(System.DateTime);
+            labelDateTime.Text = "Дата и время закрытия заявки";
+            labelDateTime.Font = new System.Drawing.Font("Segoe UI", 8.5f);
+            labelDateTime.ForeColor = System.Drawing.Color.FromArgb(80, 90, 110);
+            labelDateTime.Location = new System.Drawing.Point(12, 26);
+            labelDateTime.Size = new System.Drawing.Size(270, 16);
 
-            // 
-            // labelDateTime
-            // 
-            this.labelDateTime.AutoSize = true;
-            this.labelDateTime.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.labelDateTime.Location = new System.Drawing.Point(8, 8);
-            this.labelDateTime.Name = "labelDateTime";
-            this.labelDateTime.Size = new System.Drawing.Size(172, 15);
-            this.labelDateTime.TabIndex = 7;
-            this.labelDateTime.Text = "Дата и время закрытия заявки";
+            dateTimePickerDate.Location = new System.Drawing.Point(12, 46);
+            dateTimePickerDate.Size = new System.Drawing.Size(168, 23);
+            dateTimePickerDate.Font = new System.Drawing.Font("Segoe UI", 9f);
 
-            // 
-            // dateTimePickerDate
-            // 
-            this.dateTimePickerDate.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.dateTimePickerDate.Location = new System.Drawing.Point(8, 45);
-            this.dateTimePickerDate.Name = "dateTimePickerDate";
-            this.dateTimePickerDate.Size = new System.Drawing.Size(180, 23);
-            this.dateTimePickerDate.TabIndex = 6;
+            labelTime.Text = "Время";
+            labelTime.Font = new System.Drawing.Font("Segoe UI", 8.5f);
+            labelTime.ForeColor = System.Drawing.Color.FromArgb(80, 90, 110);
+            labelTime.Location = new System.Drawing.Point(188, 28);
+            labelTime.Size = new System.Drawing.Size(48, 16);
 
-            // 
-            // timerRefresh
-            // 
-            this.timerRefresh.Interval = 30000;
-            this.timerRefresh.Tick += new System.EventHandler(this.timerRefresh_Tick);
+            maskedTextBoxTime.Location = new System.Drawing.Point(188, 46);
+            maskedTextBoxTime.Size = new System.Drawing.Size(60, 23);
+            maskedTextBoxTime.Font = new System.Drawing.Font("Segoe UI", 9f);
+            maskedTextBoxTime.Mask = "00:00";
+            maskedTextBoxTime.Text = "1200";
+            maskedTextBoxTime.ValidatingType = typeof(System.DateTime);
 
-            // 
-            // progressBar
-            // 
-            this.progressBar.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.progressBar.Location = new System.Drawing.Point(12, 525);
-            this.progressBar.Name = "progressBar";
-            this.progressBar.Size = new System.Drawing.Size(550, 20);
-            this.progressBar.TabIndex = 6;
-            this.progressBar.Visible = false;
+            // ── panelApplicant ────────────────────────────────────────────
+            panelApplicant.Dock = System.Windows.Forms.DockStyle.Top;
+            panelApplicant.Height = 120;
+            panelApplicant.BackColor = System.Drawing.Color.White;
+            panelApplicant.Padding = new System.Windows.Forms.Padding(12, 8, 12, 8);
+            panelApplicant.Visible = false;
+            panelApplicant.Controls.AddRange(new System.Windows.Forms.Control[]
+            {
+                lblApplicantHeader,
+                labelLastName,   textBoxApplicantLastName,
+                labelFirstName,  textBoxApplicantFirstName,
+                labelPatronymic, textBoxApplicantPatronymic
+            });
 
-            // 
-            // statusStrip
-            // 
-            this.statusStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-                this.statusLabel,
-                this.statusLabelCount});
-            this.statusStrip.Location = new System.Drawing.Point(0, 550);
-            this.statusStrip.Name = "statusStrip";
-            this.statusStrip.Size = new System.Drawing.Size(884, 22);
-            this.statusStrip.TabIndex = 7;
+            lblApplicantHeader.Text = "ЗАЯВИТЕЛЬ";
+            lblApplicantHeader.Font = new System.Drawing.Font("Segoe UI", 7.5f, System.Drawing.FontStyle.Bold);
+            lblApplicantHeader.ForeColor = System.Drawing.Color.FromArgb(0, 122, 204);
+            lblApplicantHeader.Location = new System.Drawing.Point(12, 8);
+            lblApplicantHeader.Size = new System.Drawing.Size(270, 14);
 
-            // 
-            // statusLabel
-            // 
-            this.statusLabel.Name = "statusLabel";
-            this.statusLabel.Size = new System.Drawing.Size(39, 17);
-            this.statusLabel.Text = "Готов";
+            labelLastName.Text = "Фамилия";
+            labelLastName.Font = new System.Drawing.Font("Segoe UI", 8.5f);
+            labelLastName.ForeColor = System.Drawing.Color.FromArgb(80, 90, 110);
+            labelLastName.Location = new System.Drawing.Point(12, 26);
+            labelLastName.Size = new System.Drawing.Size(80, 16);
 
-            // 
-            // statusLabelCount
-            // 
-            this.statusLabelCount.Name = "statusLabelCount";
-            this.statusLabelCount.Size = new System.Drawing.Size(0, 17);
+            textBoxApplicantLastName.Location = new System.Drawing.Point(96, 23);
+            textBoxApplicantLastName.Size = new System.Drawing.Size(188, 23);
+            textBoxApplicantLastName.Font = new System.Drawing.Font("Segoe UI", 9f);
+            textBoxApplicantLastName.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
 
-            // 
-            // FormPDFFiller
-            // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.BackColor = System.Drawing.Color.WhiteSmoke;
-            this.ClientSize = new System.Drawing.Size(884, 572);
-            this.Controls.Add(this.statusStrip);
-            this.Controls.Add(this.progressBar);
-            this.Controls.Add(this.panelSettings);
-            this.Controls.Add(this.groupBoxMode);
-            this.Controls.Add(this.dataGridViewFiles);
-            this.Controls.Add(this.buttonProcess);
-            this.Controls.Add(this.menuStrip);
-            this.MainMenuStrip = this.menuStrip;
-            this.MinimumSize = new System.Drawing.Size(900, 600);
-            this.Name = "FormPDFFiller";
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "Автозаполнение СЛ";
-            this.Load += new System.EventHandler(this.FormPDFFiller_Load);
-            ((System.ComponentModel.ISupportInitialize)(this.dataGridViewFiles)).EndInit();
-            this.menuStrip.ResumeLayout(false);
-            this.menuStrip.PerformLayout();
-            this.groupBoxMode.ResumeLayout(false);
-            this.groupBoxMode.PerformLayout();
-            this.groupBoxOptions.ResumeLayout(false);
-            this.groupBoxOptions.PerformLayout();
-            this.panelSettings.ResumeLayout(false);
-            this.panelApplicant.ResumeLayout(false);
-            this.panelApplicant.PerformLayout();
-            this.panelDateTime.ResumeLayout(false);
-            this.panelDateTime.PerformLayout();
-            this.statusStrip.ResumeLayout(false);
-            this.statusStrip.PerformLayout();
-            this.ResumeLayout(false);
-            this.PerformLayout();
+            labelFirstName.Text = "Имя";
+            labelFirstName.Font = new System.Drawing.Font("Segoe UI", 8.5f);
+            labelFirstName.ForeColor = System.Drawing.Color.FromArgb(80, 90, 110);
+            labelFirstName.Location = new System.Drawing.Point(12, 54);
+            labelFirstName.Size = new System.Drawing.Size(80, 16);
+
+            textBoxApplicantFirstName.Location = new System.Drawing.Point(96, 51);
+            textBoxApplicantFirstName.Size = new System.Drawing.Size(188, 23);
+            textBoxApplicantFirstName.Font = new System.Drawing.Font("Segoe UI", 9f);
+            textBoxApplicantFirstName.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+
+            labelPatronymic.Text = "Отчество";
+            labelPatronymic.Font = new System.Drawing.Font("Segoe UI", 8.5f);
+            labelPatronymic.ForeColor = System.Drawing.Color.FromArgb(80, 90, 110);
+            labelPatronymic.Location = new System.Drawing.Point(12, 82);
+            labelPatronymic.Size = new System.Drawing.Size(80, 16);
+
+            textBoxApplicantPatronymic.Location = new System.Drawing.Point(96, 79);
+            textBoxApplicantPatronymic.Size = new System.Drawing.Size(188, 23);
+            textBoxApplicantPatronymic.Font = new System.Drawing.Font("Segoe UI", 9f);
+            textBoxApplicantPatronymic.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+
+            // ── buttonProcess ─────────────────────────────────────────────
+            buttonProcess.Text = "▶  Обработать СЛ";
+            buttonProcess.Dock = System.Windows.Forms.DockStyle.Bottom;
+            buttonProcess.Height = 40;
+            buttonProcess.Font = new System.Drawing.Font("Segoe UI", 10f, System.Drawing.FontStyle.Bold);
+            buttonProcess.BackColor = System.Drawing.Color.FromArgb(0, 122, 204);
+            buttonProcess.ForeColor = System.Drawing.Color.White;
+            buttonProcess.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            buttonProcess.FlatAppearance.BorderSize = 0;
+            buttonProcess.UseVisualStyleBackColor = false;
+            buttonProcess.Click += buttonProcess_Click;
+
+            // ── statusStrip ───────────────────────────────────────────────
+            statusStrip.BackColor = System.Drawing.Color.FromArgb(28, 35, 49);
+            statusStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[]
+                { statusLabel, statusLabelCount });
+
+            statusLabel.Text = "Готов";
+            statusLabel.ForeColor = System.Drawing.Color.FromArgb(190, 200, 220);
+
+            statusLabelCount.ForeColor = System.Drawing.Color.FromArgb(120, 140, 170);
+            statusLabelCount.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
+
+            // ── timerRefresh ──────────────────────────────────────────────
+            timerRefresh.Interval = 30000;
+            timerRefresh.Tick += timerRefresh_Tick;
+
+            // ── Form ──────────────────────────────────────────────────────
+            AutoScaleDimensions = new System.Drawing.SizeF(7f, 15f);
+            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            ClientSize = new System.Drawing.Size(920, 620);
+            MinimumSize = new System.Drawing.Size(780, 520);
+            FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable;
+            StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
+            Text = "Автозаполнение сервисных листов";
+            Name = "FormPDFFiller";
+            MainMenuStrip = menuStrip;
+            BackColor = System.Drawing.Color.FromArgb(242, 244, 248);
+            Load += FormPDFFiller_Load;
+
+            // Порядок важен: Fill заполняет остаток после всех Dock
+            Controls.Add(panelMain);
+            Controls.Add(panelTop);
+            Controls.Add(menuStrip);
+            Controls.Add(statusStrip);
+
+            ((System.ComponentModel.ISupportInitialize)dataGridViewFiles).EndInit();
+            menuStrip.ResumeLayout(false);
+            menuStrip.PerformLayout();
+            panelTop.ResumeLayout(false);
+            panelMain.ResumeLayout(false);
+            panelGrid.ResumeLayout(false);
+            panelRight.ResumeLayout(false);
+            groupBoxMode.ResumeLayout(false);
+            groupBoxOptions.ResumeLayout(false);
+            panelSettings.ResumeLayout(false);
+            panelDateTime.ResumeLayout(false);
+            panelApplicant.ResumeLayout(false);
+            statusStrip.ResumeLayout(false);
+            statusStrip.PerformLayout();
+            ResumeLayout(false);
+            PerformLayout();
         }
 
-        #endregion
-
-        private System.Windows.Forms.Button buttonProcess;
-        private System.Windows.Forms.DataGridView dataGridViewFiles;
-        private System.Windows.Forms.DataGridViewTextBoxColumn columnFileName;
-        private System.Windows.Forms.DataGridViewCheckBoxColumn columnSelected;
         private System.Windows.Forms.MenuStrip menuStrip;
         private System.Windows.Forms.ToolStripMenuItem menuItemSettings;
         private System.Windows.Forms.ToolStripMenuItem menuItemSettingsOpen;
         private System.Windows.Forms.ToolStripMenuItem menuItemRefresh;
+        private System.Windows.Forms.Panel panelTop;
+        private System.Windows.Forms.Label lblTitle;
+        private System.Windows.Forms.Label lblSubtitle;
+        private System.Windows.Forms.Panel panelMain;
+        private System.Windows.Forms.Panel panelGrid;
+        private System.Windows.Forms.Label lblFilesTitle;
+        private System.Windows.Forms.DataGridView dataGridViewFiles;
+        private System.Windows.Forms.DataGridViewTextBoxColumn columnFileName;
+        private System.Windows.Forms.DataGridViewCheckBoxColumn columnSelected;
+        private System.Windows.Forms.ProgressBar progressBar;
+        private System.Windows.Forms.Panel panelRight;
         private System.Windows.Forms.GroupBox groupBoxMode;
-        private System.Windows.Forms.GroupBox groupBoxOptions;
-        private System.Windows.Forms.CheckBox checkBoxMonthYearOnly;
-        private System.Windows.Forms.CheckBox checkBoxCustomDate;
-        private System.Windows.Forms.CheckBox checkBoxCustomApplicant;
         private System.Windows.Forms.RadioButton radioButtonProcessAll;
         private System.Windows.Forms.RadioButton radioButtonProcessSingle;
+        private System.Windows.Forms.GroupBox groupBoxOptions;
+        private System.Windows.Forms.CheckBox checkBoxCustomDate;
+        private System.Windows.Forms.CheckBox checkBoxMonthYearOnly;
+        private System.Windows.Forms.CheckBox checkBoxCustomApplicant;
         private System.Windows.Forms.Panel panelSettings;
-        private System.Windows.Forms.Panel panelApplicant;
-        private System.Windows.Forms.Label labelPatronymic;
-        private System.Windows.Forms.Label labelFirstName;
-        private System.Windows.Forms.Label labelLastName;
-        private System.Windows.Forms.TextBox textBoxApplicantPatronymic;
-        private System.Windows.Forms.TextBox textBoxApplicantFirstName;
-        private System.Windows.Forms.TextBox textBoxApplicantLastName;
         private System.Windows.Forms.Panel panelDateTime;
-        private System.Windows.Forms.Label labelTime;
-        private System.Windows.Forms.MaskedTextBox maskedTextBoxTime;
+        private System.Windows.Forms.Label lblDateTimeHeader;
         private System.Windows.Forms.Label labelDateTime;
         private System.Windows.Forms.DateTimePicker dateTimePickerDate;
-        private System.Windows.Forms.Timer timerRefresh;
-        private System.Windows.Forms.ProgressBar progressBar;
+        private System.Windows.Forms.Label labelTime;
+        private System.Windows.Forms.MaskedTextBox maskedTextBoxTime;
+        private System.Windows.Forms.Panel panelApplicant;
+        private System.Windows.Forms.Label lblApplicantHeader;
+        private System.Windows.Forms.Label labelLastName;
+        private System.Windows.Forms.TextBox textBoxApplicantLastName;
+        private System.Windows.Forms.Label labelFirstName;
+        private System.Windows.Forms.TextBox textBoxApplicantFirstName;
+        private System.Windows.Forms.Label labelPatronymic;
+        private System.Windows.Forms.TextBox textBoxApplicantPatronymic;
+        private System.Windows.Forms.Button buttonProcess;
         private System.Windows.Forms.StatusStrip statusStrip;
         private System.Windows.Forms.ToolStripStatusLabel statusLabel;
         private System.Windows.Forms.ToolStripStatusLabel statusLabelCount;
+        private System.Windows.Forms.Timer timerRefresh;
     }
 }
-
