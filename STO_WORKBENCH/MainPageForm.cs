@@ -3,6 +3,7 @@ using STO_WORKBENCH.PDFFiller;
 using STO_WORKBENCH.SLRegistry;
 using STO_WORKBENCH.UpdateProgramm;
 using STO_WORKBENCH.ZayavkoDrochitel3000;
+using STO_WORKBENCH.MultiBurner;
 
 namespace STO_WORKBENCH
 {
@@ -57,6 +58,14 @@ namespace STO_WORKBENCH
         {
             Form form = new FormZayavkodrochitel3000();
             form.ShowDialog();
+        }
+
+        private void buttonMultiburner_Click(object sender, EventArgs e)
+        {
+            {
+                Form FormMultiburner = new BurnerForm();
+                FormMultiburner.ShowDialog();
+            }
         }
     }
 }

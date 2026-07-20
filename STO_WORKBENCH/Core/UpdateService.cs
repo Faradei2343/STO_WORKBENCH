@@ -1,17 +1,13 @@
-﻿using System;
-using System.Diagnostics;
-using System.IO;
-using System.Net.Http;
+﻿using System.Diagnostics;
+using System.IO.Compression;
 using System.Net.Http.Json;
 using System.Reflection;
-using System.Threading.Tasks;
-using System.Windows.Forms;
+using System.Text;
 
 namespace STO_WORKBENCH.Core
 {
     public class UpdateService
     {
-        // Замени на свой репозиторий
         private const string RepoOwner = "Faradei2343";
         private const string RepoName = "STO_WORKBENCH";
         private const string ApiUrl = $"https://api.github.com/repos/{RepoOwner}/{RepoName}/releases/latest";
@@ -20,119 +16,292 @@ namespace STO_WORKBENCH.Core
 
         static UpdateService()
         {
-            // GitHub API требует User-Agent
-            _http.DefaultRequestHeaders.UserAgent
-                .ParseAdd("STO_WORKBENCH-Updater/1.0");
+            _http.DefaultRequestHeaders.UserAgent.ParseAdd("STO_WORKBENCH-Updater/2.0");
         }
 
         /// <summary>
         /// Проверяет наличие обновления.
-        /// Возвращает информацию о релизе если есть новая версия, иначе null.
+        /// Ищет ZIP-архив в последнем GitHub Release.
         /// </summary>
         public async Task<ReleaseInfo?> CheckForUpdateAsync()
         {
             try
             {
-                var release = await _http.GetFromJsonAsync<GitHubRelease>(ApiUrl);
-                if (release == null) return null;
+                GitHubRelease? release = await _http.GetFromJsonAsync<GitHubRelease>(ApiUrl);
 
-                // Тег вида "v1.2.3" или "1.2.3"
-                var tagVersion = release.tag_name.TrimStart('v');
+                if (release == null)
+                    return null;
 
-                if (Version.TryParse(tagVersion, out var remoteVersion) &&
-                    remoteVersion > GetCurrentVersion())
-                {
-                    // Ищем asset — файл .exe в релизе
-                    string? downloadUrl = null;
-                    foreach (var asset in release.assets)
-                    {
-                        if (asset.name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
-                        {
-                            downloadUrl = asset.browser_download_url;
-                            break;
-                        }
-                    }
+                if (string.IsNullOrWhiteSpace(release.tag_name))
+                    return null;
 
+                string tagVersion = release.tag_name.TrimStart('v', 'V');
+
+                if (!Version.TryParse(tagVersion, out Version? remoteVersion))
+                    return null;
+
+                Version currentVersion = GetCurrentVersion();
+
+                if (remoteVersion <= currentVersion)
+                    return null;
+
+                GitHubAsset? zipAsset = release.assets
+                    .FirstOrDefault(x =>
+                        x.name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase));
+
+                if (zipAsset == null)
                     return new ReleaseInfo
                     {
                         Version = remoteVersion,
-                        DownloadUrl = downloadUrl,
-                        Notes = release.body,
+                        DownloadUrl = null,
+                        AssetName = "",
+                        Notes = release.body ?? "",
                         TagName = release.tag_name
                     };
-                }
 
-                return null;
+                return new ReleaseInfo
+                {
+                    Version = remoteVersion,
+                    DownloadUrl = zipAsset.browser_download_url,
+                    AssetName = zipAsset.name,
+                    Notes = release.body ?? "",
+                    TagName = release.tag_name
+                };
             }
             catch
             {
-                // Нет интернета или GitHub недоступен — молча пропускаем
                 return null;
             }
         }
 
         /// <summary>
-        /// Скачивает новый .exe и перезапускает приложение.
+        /// Скачивает ZIP-архив обновления, распаковывает его во временную папку
+        /// и запускает внешний update.cmd, который заменяет все файлы приложения.
         /// </summary>
-        public async Task DownloadAndInstallAsync(ReleaseInfo release, IProgress<int> progress)
+        public async Task DownloadAndInstallAsync(ReleaseInfo release, IProgress<int>? progress)
         {
-            if (string.IsNullOrEmpty(release.DownloadUrl))
-                throw new InvalidOperationException("Ссылка на загрузку не найдена.");
+            if (release == null)
+                throw new ArgumentNullException(nameof(release));
 
-            var currentExe = Application.ExecutablePath;
-            var newExe = currentExe + ".new";
-            var oldExe = currentExe + ".old";
+            if (string.IsNullOrWhiteSpace(release.DownloadUrl))
+                throw new InvalidOperationException("В релизе не найден ZIP-архив обновления.");
 
-            // Скачиваем во временный файл
-            using (var response = await _http.GetAsync(
-                release.DownloadUrl,
-                HttpCompletionOption.ResponseHeadersRead))
-            {
-                response.EnsureSuccessStatusCode();
+            string appExePath = Application.ExecutablePath;
+            string appDirectory = AppDomain.CurrentDomain.BaseDirectory;
+            string exeName = Path.GetFileName(appExePath);
 
-                var total = response.Content.Headers.ContentLength ?? -1L;
-                var downloaded = 0L;
+            string updateRoot = Path.Combine(
+                Path.GetTempPath(),
+                "STO_WORKBENCH_Update_" + Guid.NewGuid().ToString("N"));
 
-                await using var fileStream = new FileStream(newExe, FileMode.Create);
-                await using var stream = await response.Content.ReadAsStreamAsync();
+            string archivePath = Path.Combine(updateRoot, "update.zip");
+            string extractPath = Path.Combine(updateRoot, "extracted");
+            string updaterCmdPath = Path.Combine(updateRoot, "update.cmd");
 
-                var buffer = new byte[8192];
-                int read;
-                while ((read = await stream.ReadAsync(buffer)) > 0)
-                {
-                    await fileStream.WriteAsync(buffer.AsMemory(0, read));
-                    downloaded += read;
+            Directory.CreateDirectory(updateRoot);
+            Directory.CreateDirectory(extractPath);
 
-                    if (total > 0)
-                        progress?.Report((int)(downloaded * 100 / total));
-                }
-            }
+            await DownloadFileAsync(release.DownloadUrl, archivePath, progress);
 
-            // Переименовываем текущий .exe в .old, новый в текущий
-            if (File.Exists(oldExe)) File.Delete(oldExe);
-            File.Move(currentExe, oldExe);
-            File.Move(newExe, currentExe);
+            ZipFile.ExtractToDirectory(archivePath, extractPath);
 
-            // Запускаем новую версию и выходим
+            string sourceDirectory = DetectSourceDirectory(extractPath);
+
+            CreateUpdaterCmd(
+                updaterCmdPath,
+                sourceDirectory,
+                appDirectory,
+                exeName);
+
+            Process currentProcess = Process.GetCurrentProcess();
+
             Process.Start(new ProcessStartInfo
             {
-                FileName = currentExe,
-                UseShellExecute = true
+                FileName = updaterCmdPath,
+                Arguments =
+                    "\"" + currentProcess.Id + "\" " +
+                    "\"" + appDirectory.TrimEnd('\\') + "\" " +
+                    "\"" + sourceDirectory.TrimEnd('\\') + "\" " +
+                    "\"" + exeName + "\"",
+                UseShellExecute = true,
+                WorkingDirectory = updateRoot,
+                WindowStyle = ProcessWindowStyle.Hidden
             });
 
             Application.Exit();
         }
 
         /// <summary>
-        /// Удаляет .old файл от предыдущего обновления если есть.
+        /// Скачивает файл с отображением прогресса.
+        /// </summary>
+        private async Task DownloadFileAsync(
+            string url,
+            string destinationPath,
+            IProgress<int>? progress)
+        {
+            using HttpResponseMessage response = await _http.GetAsync(
+                url,
+                HttpCompletionOption.ResponseHeadersRead);
+
+            response.EnsureSuccessStatusCode();
+
+            long totalBytes = response.Content.Headers.ContentLength ?? -1L;
+            long downloadedBytes = 0;
+
+            using Stream inputStream = await response.Content.ReadAsStreamAsync();
+            using FileStream outputStream = new FileStream(
+                destinationPath,
+                FileMode.Create,
+                FileAccess.Write,
+                FileShare.None,
+                81920,
+                true);
+
+            byte[] buffer = new byte[81920];
+
+            while (true)
+            {
+                int read = await inputStream.ReadAsync(buffer, 0, buffer.Length);
+
+                if (read <= 0)
+                    break;
+
+                await outputStream.WriteAsync(buffer, 0, read);
+
+                downloadedBytes += read;
+
+                if (totalBytes > 0)
+                {
+                    int percent = (int)(downloadedBytes * 100L / totalBytes);
+                    progress?.Report(percent);
+                }
+            }
+
+            progress?.Report(100);
+        }
+
+        /// <summary>
+        /// Определяет, где внутри архива лежат файлы приложения.
+        /// 
+        /// Поддерживает оба варианта:
+        /// 
+        /// Вариант 1:
+        /// archive.zip
+        ///   STO_WORKBENCH.exe
+        ///   dll...
+        /// 
+        /// Вариант 2:
+        /// archive.zip
+        ///   STO_WORKBENCH/
+        ///     STO_WORKBENCH.exe
+        ///     dll...
+        /// </summary>
+        private string DetectSourceDirectory(string extractPath)
+        {
+            string[] files = Directory.GetFiles(extractPath);
+            string[] directories = Directory.GetDirectories(extractPath);
+
+            bool exeInRoot = Directory
+                .GetFiles(extractPath, "*.exe", SearchOption.TopDirectoryOnly)
+                .Any();
+
+            if (exeInRoot)
+                return extractPath;
+
+            if (files.Length == 0 && directories.Length == 1)
+                return directories[0];
+
+            return extractPath;
+        }
+
+        /// <summary>
+        /// Создает update.cmd, который после закрытия приложения
+        /// копирует все файлы из новой версии в папку приложения.
+        /// </summary>
+        private void CreateUpdaterCmd(
+            string updaterCmdPath,
+            string sourceDirectory,
+            string appDirectory,
+            string exeName)
+        {
+            string script = @"
+@echo off
+setlocal
+
+set PID=%~1
+set APP_DIR=%~2
+set SRC_DIR=%~3
+set EXE_NAME=%~4
+
+echo Waiting for application to close...
+
+:wait_loop
+tasklist /FI ""PID eq %PID%"" | find ""%PID%"" >nul
+if not errorlevel 1 (
+    timeout /t 1 /nobreak >nul
+    goto wait_loop
+)
+
+echo Updating files...
+
+robocopy ""%SRC_DIR%"" ""%APP_DIR%"" /E /COPY:DAT /R:3 /W:1 /NFL /NDL /NJH /NJS /NP
+
+set ROBOCOPY_CODE=%ERRORLEVEL%
+
+REM Robocopy codes 0-7 are success/warnings, 8+ are errors
+if %ROBOCOPY_CODE% GEQ 8 (
+    echo Update failed. Robocopy code: %ROBOCOPY_CODE%
+    start """" ""%APP_DIR%\%EXE_NAME%""
+    exit /b %ROBOCOPY_CODE%
+)
+
+echo Starting application...
+
+start """" ""%APP_DIR%\%EXE_NAME%""
+
+timeout /t 2 /nobreak >nul
+
+exit /b 0
+";
+
+            File.WriteAllText(updaterCmdPath, script, Encoding.GetEncoding(866));
+        }
+
+        /// <summary>
+        /// Удаляет старые временные папки обновлений.
+        /// Вызывать при старте приложения.
         /// </summary>
         public static void CleanupOldFiles()
         {
-            var oldExe = Application.ExecutablePath + ".old";
-            if (File.Exists(oldExe))
+            try
             {
-                try { File.Delete(oldExe); }
-                catch { /* не критично */ }
+                string tempPath = Path.GetTempPath();
+
+                string[] updateDirectories = Directory.GetDirectories(
+                    tempPath,
+                    "STO_WORKBENCH_Update_*",
+                    SearchOption.TopDirectoryOnly);
+
+                foreach (string dir in updateDirectories)
+                {
+                    try
+                    {
+                        DirectoryInfo di = new DirectoryInfo(dir);
+
+                        if (di.CreationTime < DateTime.Now.AddDays(-3))
+                        {
+                            di.Delete(true);
+                        }
+                    }
+                    catch
+                    {
+                        // Не критично
+                    }
+                }
+            }
+            catch
+            {
+                // Не критично
             }
         }
 
@@ -160,8 +329,13 @@ namespace STO_WORKBENCH.Core
     public class ReleaseInfo
     {
         public Version Version { get; set; } = new Version(0, 0, 0);
+
         public string? DownloadUrl { get; set; }
+
+        public string AssetName { get; set; } = "";
+
         public string Notes { get; set; } = "";
+
         public string TagName { get; set; } = "";
     }
 }

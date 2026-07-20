@@ -37,7 +37,7 @@ namespace STO_WORKBENCH.ZayavkoDrochitel3000
             PrepareProgress(pgGenerate, total);
             txtGenLog.Clear();
             SetGenerateUiRunning(true);
-
+          
             _cts = new CancellationTokenSource();
             var service = new ExcelService();
 

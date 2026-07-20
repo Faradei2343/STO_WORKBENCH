@@ -24,6 +24,7 @@
             panelContent = new System.Windows.Forms.Panel();
             lblWelcome = new System.Windows.Forms.Label();
             lblWelcomeSub = new System.Windows.Forms.Label();
+            buttonMultiburner = new System.Windows.Forms.Button();
 
             panelLeft.SuspendLayout();
             panelHeader.SuspendLayout();
@@ -40,7 +41,8 @@
                 buttonSort,
                 buttonSL,
                 buttonAutoSL,
-                buttonZayavki
+                buttonZayavki,
+                buttonMultiburner
             });
 
             // ── panelHeader ───────────────────────────────────────────────
@@ -86,6 +88,11 @@
             buttonZayavki.Location = new System.Drawing.Point(0, btnY + btnH * 3);
             buttonZayavki.Size = new System.Drawing.Size(btnW, btnH);
             buttonZayavki.Click += buttonZayavki_Click;
+
+            StyleNavButton(buttonMultiburner, "Мультизапись дисков");
+            buttonMultiburner.Location = new System.Drawing.Point(0, btnY + btnH * 4);
+            buttonMultiburner.Size = new System.Drawing.Size(btnW, btnH);
+            buttonMultiburner.Click += buttonMultiburner_Click;
 
             // ── panelContent ──────────────────────────────────────────────
             panelContent.BackColor = System.Drawing.Color.FromArgb(242, 244, 248);
@@ -157,5 +164,6 @@
         private System.Windows.Forms.Button buttonSL;
         private System.Windows.Forms.Button buttonAutoSL;
         private System.Windows.Forms.Button buttonZayavki;
+        private System.Windows.Forms.Button buttonMultiburner;
     }
 }

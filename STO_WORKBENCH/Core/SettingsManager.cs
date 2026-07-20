@@ -12,7 +12,7 @@ namespace STO_WORKBENCH.Core
     public static class SettingsManager
     {
         // ---------- Геттеры и сеттеры для каждой настройки ----------
-
+       
         // Sorter
         public static string SorterLastFolder
         {
