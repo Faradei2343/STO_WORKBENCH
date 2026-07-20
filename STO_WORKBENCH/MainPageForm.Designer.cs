@@ -112,7 +112,7 @@
             lblWelcomeSub.Font = new System.Drawing.Font("Segoe UI", 10.5f);
             lblWelcomeSub.ForeColor = System.Drawing.Color.FromArgb(100, 110, 130);
             lblWelcomeSub.AutoSize = false;
-            lblWelcomeSub.Size = new System.Drawing.Size(460, 30);
+            lblWelcomeSub.Size = new System.Drawing.Size(520, 30);
             lblWelcomeSub.Location = new System.Drawing.Point(40, 236);
             lblWelcomeSub.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
 

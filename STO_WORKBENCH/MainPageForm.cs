@@ -4,12 +4,14 @@ using STO_WORKBENCH.SLRegistry;
 using STO_WORKBENCH.UpdateProgramm;
 using STO_WORKBENCH.ZayavkoDrochitel3000;
 using STO_WORKBENCH.MultiBurner;
+using System.Reflection;
 
 namespace STO_WORKBENCH
 {
     public partial class MainPageForm : Form
     {
         private readonly UpdateService _updateService = new UpdateService();
+        
         public MainPageForm()
         {
             InitializeComponent();
@@ -17,6 +19,7 @@ namespace STO_WORKBENCH
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            lblWelcomeSub.Text=lblWelcomeSub.Text+" Версия: "+ UpdateService.GetCurrentVersion();
             // Чистим .old от прошлого обновления
             UpdateService.CleanupOldFiles();
 

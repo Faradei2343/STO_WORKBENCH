@@ -264,7 +264,7 @@ timeout /t 2 /nobreak >nul
 exit /b 0
 ";
 
-            File.WriteAllText(updaterCmdPath, script, Encoding.GetEncoding(866));
+            File.WriteAllText(updaterCmdPath, script, Encoding.ASCII);
         }
 
         /// <summary>
