@@ -25,6 +25,7 @@
             lblWelcome = new System.Windows.Forms.Label();
             lblWelcomeSub = new System.Windows.Forms.Label();
             buttonMultiburner = new System.Windows.Forms.Button();
+            buttonFileExporter = new System.Windows.Forms.Button();
 
             panelLeft.SuspendLayout();
             panelHeader.SuspendLayout();
@@ -42,7 +43,8 @@
                 buttonSL,
                 buttonAutoSL,
                 buttonZayavki,
-                buttonMultiburner
+                buttonMultiburner,
+                buttonFileExporter
             });
 
             // ── panelHeader ───────────────────────────────────────────────
@@ -75,7 +77,7 @@
             buttonSort.Click += buttonSort_Click;
 
             StyleNavButton(buttonSL, "📄  Сервисные листы");
-            buttonSL.Location = new System.Drawing.Point(0, btnY + btnH);
+            buttonSL.Location = new System.Drawing.Point(0, btnY + btnH );
             buttonSL.Size = new System.Drawing.Size(btnW, btnH);
             buttonSL.Click += buttonSL_Click;
 
@@ -93,6 +95,11 @@
             buttonMultiburner.Location = new System.Drawing.Point(0, btnY + btnH * 4);
             buttonMultiburner.Size = new System.Drawing.Size(btnW, btnH);
             buttonMultiburner.Click += buttonMultiburner_Click;
+
+            StyleNavButton(buttonFileExporter, "Экспот имен файлов в Excel'");
+            buttonFileExporter.Location = new System.Drawing.Point(0, btnY + btnH * 5);
+            buttonFileExporter.Size = new System.Drawing.Size(btnW, btnH);
+            buttonFileExporter.Click += buttonFileExporter_Click;
 
             // ── panelContent ──────────────────────────────────────────────
             panelContent.BackColor = System.Drawing.Color.FromArgb(242, 244, 248);
@@ -165,5 +172,6 @@
         private System.Windows.Forms.Button buttonAutoSL;
         private System.Windows.Forms.Button buttonZayavki;
         private System.Windows.Forms.Button buttonMultiburner;
+        private System.Windows.Forms.Button buttonFileExporter;
     }
 }

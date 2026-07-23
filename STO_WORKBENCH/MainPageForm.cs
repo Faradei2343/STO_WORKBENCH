@@ -4,6 +4,7 @@ using STO_WORKBENCH.SLRegistry;
 using STO_WORKBENCH.UpdateProgramm;
 using STO_WORKBENCH.ZayavkoDrochitel3000;
 using STO_WORKBENCH.MultiBurner;
+using STO_WORKBENCH.FileNameExporter;
 using System.Reflection;
 
 namespace STO_WORKBENCH
@@ -65,10 +66,14 @@ namespace STO_WORKBENCH
 
         private void buttonMultiburner_Click(object sender, EventArgs e)
         {
-            {
                 Form FormMultiburner = new BurnerForm();
                 FormMultiburner.ShowDialog();
-            }
+        }
+
+        private void buttonFileExporter_Click(object sender, EventArgs e)
+        {
+                Form FileNameExporter = new FormFileNameExporter();
+                FileNameExporter.ShowDialog();
         }
     }
 }
