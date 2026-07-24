@@ -13,16 +13,60 @@ namespace STO_WORKBENCH.FileNameExporter
         public string SourceFileName { get; set; }
         public string ResultName { get; set; }
         public string FullPath { get; set; }
+        public string TargetFolder { get; set; }
+        public string GroupKey { get; set; }
     }
 
     public class FileNameExporterOptions
     {
         public string FolderPath { get; set; }
-        public string SearchPattern { get; set; } = "*.pdf";
-        public string Template { get; set; } = "{4}";
+        public string SearchPattern { get; set; } = "*.*";
+        public string Template { get; set; } = "{name}";
         public string Separator { get; set; } = "_";
-        public bool IncludeSubfolders { get; set; } = false;
+        public bool IncludeSubfolders { get; set; }
         public bool IncludeOriginalFileName { get; set; } = true;
+
+        public bool RemoveDuplicates { get; set; }
+        public bool IgnoreCaseDuplicates { get; set; } = true;
+
+        public bool OrganizeFiles { get; set; }
+        public bool CopyFiles { get; set; } = true;
+        public string OutputRootFolder { get; set; }
+
+        public List<FileSortRule> SortRules { get; set; } = new List<FileSortRule>();
+
+        public bool EnableGrouping { get; set; }
+
+        /// <summary>
+        /// Например:
+        /// {match:№\s*(\d+):1}
+        /// или
+        /// {match:№\s*(\d+):1}_{match:от\s*(\d{2}\.\d{2}\.\d{4}):1}
+        /// </summary>
+        public string GroupKeyTemplate { get; set; }
+
+        /// <summary>
+        /// Например:
+        /// Комплект_{group}
+        /// или
+        /// {group}
+        /// </summary>
+        public string GroupFolderTemplate { get; set; } = "{group}";
+    }
+
+    public class FileSortRule
+    {
+        public bool Enabled { get; set; } = true;
+
+        public string TargetFolderName { get; set; }
+
+        /// <summary>
+        /// Несколько regex-шаблонов.
+        /// Если хотя бы один совпал — файл попадает в TargetFolderName.
+        /// </summary>
+        public List<string> RegexPatterns { get; set; } = new List<string>();
+
+        public bool IgnoreCase { get; set; } = true;
     }
 
     public class FileNameExporter
@@ -31,120 +75,233 @@ namespace STO_WORKBENCH.FileNameExporter
         {
             ValidateOptions(options);
 
-            var searchOption = options.IncludeSubfolders
+            SearchOption searchOption = options.IncludeSubfolders
                 ? SearchOption.AllDirectories
                 : SearchOption.TopDirectoryOnly;
 
-            var files = GetFiles(options.FolderPath, options.SearchPattern, searchOption);
+            List<string> files = GetFiles(
+                options.FolderPath,
+                options.SearchPattern,
+                searchOption
+            ).ToList();
 
-            var result = new List<FileNameExportItem>();
+            List<FileNameExportItem> result = new List<FileNameExportItem>();
+
             int number = 1;
 
-            foreach (var filePath in files)
+            foreach (string filePath in files)
             {
-                var fileInfo = new FileInfo(filePath);
+                FileInfo fileInfo = new FileInfo(filePath);
+                string fileName = fileInfo.Name;
 
-                string sourceFileName = fileInfo.Name;
-                string resultName = ApplyTemplate(
-                    sourceFileName,
+                string resultName = TemplateEngine.ApplyTemplate(
+                    fileName,
                     options.Template,
                     options.Separator
                 );
 
+                string targetFolder = GetTargetFolder(fileName, options.SortRules);
+
+                string groupKey = string.Empty;
+
+                if (options.EnableGrouping && !string.IsNullOrWhiteSpace(options.GroupKeyTemplate))
+                {
+                    groupKey = TemplateEngine.ApplyTemplate(
+                        fileName,
+                        options.GroupKeyTemplate,
+                        options.Separator
+                    );
+                }
+
                 result.Add(new FileNameExportItem
                 {
                     Number = number++,
-                    SourceFileName = sourceFileName,
+                    SourceFileName = fileName,
                     ResultName = resultName,
-                    FullPath = filePath
+                    FullPath = filePath,
+                    TargetFolder = targetFolder,
+                    GroupKey = groupKey
                 });
             }
+
+            if (options.RemoveDuplicates)
+            {
+                result = RemoveDuplicates(result, options.IgnoreCaseDuplicates);
+            }
+
+            Renumber(result);
 
             return result;
         }
 
-        public void ExportToExcel(
-            FileNameExporterOptions options,
-            string outputExcelPath)
+        public void ExportToExcel(FileNameExporterOptions options, string outputExcelPath)
         {
             if (string.IsNullOrWhiteSpace(outputExcelPath))
-                throw new ArgumentException("Не указан путь для сохранения Excel-файла.");
+                throw new ArgumentException("Не указан путь сохранения Excel.");
 
-            var items = GetFileNames(options);
+            List<FileNameExportItem> items = GetFileNames(options);
 
-            using (var workbook = new XLWorkbook())
+            using (XLWorkbook workbook = new XLWorkbook())
             {
-                var worksheet = workbook.Worksheets.Add("Файлы");
+                IXLWorksheet sheet = workbook.Worksheets.Add("Файлы");
 
                 int row = 1;
-                int column = 1;
+                int col = 1;
 
-                worksheet.Cell(row, column++).Value = "№";
+                sheet.Cell(row, col++).Value = "№";
 
                 if (options.IncludeOriginalFileName)
-                    worksheet.Cell(row, column++).Value = "Исходное имя файла";
+                    sheet.Cell(row, col++).Value = "Исходное имя файла";
 
-                worksheet.Cell(row, column++).Value = "Результат";
+                sheet.Cell(row, col++).Value = "Результат";
+                sheet.Cell(row, col++).Value = "Группа";
+                sheet.Cell(row, col++).Value = "Папка";
+                sheet.Cell(row, col++).Value = "Полный путь";
 
-                worksheet.Row(row).Style.Font.Bold = true;
+                sheet.Row(row).Style.Font.Bold = true;
 
                 row = 2;
 
-                foreach (var item in items)
+                foreach (FileNameExportItem item in items)
                 {
-                    column = 1;
+                    col = 1;
 
-                    worksheet.Cell(row, column++).Value = item.Number;
+                    sheet.Cell(row, col++).Value = item.Number;
 
                     if (options.IncludeOriginalFileName)
-                        worksheet.Cell(row, column++).Value = item.SourceFileName;
+                        sheet.Cell(row, col++).Value = item.SourceFileName;
 
-                    worksheet.Cell(row, column++).Value = item.ResultName;
+                    sheet.Cell(row, col++).Value = item.ResultName;
+                    sheet.Cell(row, col++).Value = item.GroupKey;
+                    sheet.Cell(row, col++).Value = item.TargetFolder;
+                    sheet.Cell(row, col++).Value = item.FullPath;
 
                     row++;
                 }
 
-                worksheet.Columns().AdjustToContents();
+                sheet.Columns().AdjustToContents();
 
                 workbook.SaveAs(outputExcelPath);
             }
         }
 
-        private static string ApplyTemplate(
-            string fileName,
-            string template,
-            string separator)
+        public void OrganizeFiles(FileNameExporterOptions options)
         {
-            string nameWithoutExtension = Path.GetFileNameWithoutExtension(fileName);
-            string extension = Path.GetExtension(fileName);
+            if (!options.OrganizeFiles)
+                return;
 
-            string[] parts;
+            if (string.IsNullOrWhiteSpace(options.OutputRootFolder))
+                throw new ArgumentException("Не указана папка, куда сортировать файлы.");
 
-            if (string.IsNullOrEmpty(separator))
-                parts = new[] { nameWithoutExtension };
-            else
-                parts = nameWithoutExtension.Split(
-                    new[] { separator },
-                    StringSplitOptions.None
-                );
+            Directory.CreateDirectory(options.OutputRootFolder);
 
-            string result = template;
+            List<FileNameExportItem> items = GetFileNames(options);
 
-            result = result.Replace("{file}", fileName);
-            result = result.Replace("{name}", nameWithoutExtension);
-            result = result.Replace("{ext}", extension);
-
-            result = Regex.Replace(result, @"\{(\d+)\}", match =>
+            foreach (FileNameExportItem item in items)
             {
-                int index = int.Parse(match.Groups[1].Value);
+                string targetFolderPath = BuildTargetFolderPath(options, item);
 
-                if (index >= 0 && index < parts.Length)
-                    return parts[index];
+                Directory.CreateDirectory(targetFolderPath);
 
+                string fileName = Path.GetFileName(item.FullPath);
+                string destinationPath = Path.Combine(targetFolderPath, fileName);
+
+                destinationPath = GetUniqueFilePath(destinationPath);
+
+                if (options.CopyFiles)
+                    File.Copy(item.FullPath, destinationPath);
+                else
+                    File.Move(item.FullPath, destinationPath);
+            }
+        }
+
+        private static string BuildTargetFolderPath(
+            FileNameExporterOptions options,
+            FileNameExportItem item)
+        {
+            string categoryFolder = string.IsNullOrWhiteSpace(item.TargetFolder)
+                ? "Без категории"
+                : item.TargetFolder;
+
+            categoryFolder = SanitizeFileName(categoryFolder);
+
+            string path = Path.Combine(options.OutputRootFolder, categoryFolder);
+
+            if (options.EnableGrouping && !string.IsNullOrWhiteSpace(item.GroupKey))
+            {
+                string groupFolder = options.GroupFolderTemplate;
+
+                if (string.IsNullOrWhiteSpace(groupFolder))
+                    groupFolder = "{group}";
+
+                groupFolder = groupFolder.Replace("{group}", item.GroupKey);
+                groupFolder = SanitizeFileName(groupFolder);
+
+                path = Path.Combine(path, groupFolder);
+            }
+
+            return path;
+        }
+
+        private static string GetTargetFolder(string fileName, List<FileSortRule> rules)
+        {
+            if (rules == null || rules.Count == 0)
                 return string.Empty;
-            });
 
-            return result;
+            foreach (FileSortRule rule in rules)
+            {
+                if (rule == null)
+                    continue;
+
+                if (!rule.Enabled)
+                    continue;
+
+                if (string.IsNullOrWhiteSpace(rule.TargetFolderName))
+                    continue;
+
+                if (rule.RegexPatterns == null || rule.RegexPatterns.Count == 0)
+                    continue;
+
+                RegexOptions regexOptions = RegexOptions.None;
+
+                if (rule.IgnoreCase)
+                    regexOptions |= RegexOptions.IgnoreCase;
+
+                foreach (string pattern in rule.RegexPatterns)
+                {
+                    if (string.IsNullOrWhiteSpace(pattern))
+                        continue;
+
+                    if (Regex.IsMatch(fileName, pattern, regexOptions))
+                    {
+                        return rule.TargetFolderName;
+                    }
+                }
+            }
+
+            return string.Empty;
+        }
+
+        private static List<FileNameExportItem> RemoveDuplicates(
+            List<FileNameExportItem> items,
+            bool ignoreCase)
+        {
+            StringComparer comparer = ignoreCase
+                ? StringComparer.OrdinalIgnoreCase
+                : StringComparer.Ordinal;
+
+            return items
+                .GroupBy(x => x.ResultName ?? string.Empty, comparer)
+                .Select(x => x.First())
+                .ToList();
+        }
+
+        private static void Renumber(List<FileNameExportItem> items)
+        {
+            for (int i = 0; i < items.Count; i++)
+            {
+                items[i].Number = i + 1;
+            }
         }
 
         private static IEnumerable<string> GetFiles(
@@ -155,26 +312,64 @@ namespace STO_WORKBENCH.FileNameExporter
             if (string.IsNullOrWhiteSpace(searchPattern))
                 searchPattern = "*.*";
 
-            var patterns = searchPattern
+            string[] patterns = searchPattern
                 .Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
                 .Select(x => x.Trim())
                 .Where(x => !string.IsNullOrWhiteSpace(x))
-                .ToList();
+                .ToArray();
 
-            if (patterns.Count == 0)
-                patterns.Add("*.*");
+            if (patterns.Length == 0)
+                patterns = new[] { "*.*" };
 
-            var files = new List<string>();
+            List<string> files = new List<string>();
 
-            foreach (var pattern in patterns)
+            foreach (string pattern in patterns)
             {
                 files.AddRange(Directory.GetFiles(folderPath, pattern, searchOption));
             }
 
             return files
-                .Distinct()
+                .Distinct(StringComparer.OrdinalIgnoreCase)
                 .OrderBy(x => x)
                 .ToList();
+        }
+
+        private static string GetUniqueFilePath(string path)
+        {
+            if (!File.Exists(path))
+                return path;
+
+            string folder = Path.GetDirectoryName(path);
+            string fileNameWithoutExt = Path.GetFileNameWithoutExtension(path);
+            string ext = Path.GetExtension(path);
+
+            int index = 1;
+
+            while (true)
+            {
+                string newPath = Path.Combine(
+                    folder,
+                    $"{fileNameWithoutExt} ({index}){ext}"
+                );
+
+                if (!File.Exists(newPath))
+                    return newPath;
+
+                index++;
+            }
+        }
+
+        private static string SanitizeFileName(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return string.Empty;
+
+            foreach (char c in Path.GetInvalidFileNameChars())
+            {
+                value = value.Replace(c, '_');
+            }
+
+            return value.Trim();
         }
 
         private static void ValidateOptions(FileNameExporterOptions options)
@@ -183,10 +378,10 @@ namespace STO_WORKBENCH.FileNameExporter
                 throw new ArgumentNullException(nameof(options));
 
             if (string.IsNullOrWhiteSpace(options.FolderPath))
-                throw new ArgumentException("Не указана папка.");
+                throw new ArgumentException("Не указана папка с файлами.");
 
             if (!Directory.Exists(options.FolderPath))
-                throw new DirectoryNotFoundException("Папка не найдена.");
+                throw new DirectoryNotFoundException("Папка с файлами не найдена.");
 
             if (string.IsNullOrWhiteSpace(options.Template))
                 throw new ArgumentException("Не указан шаблон результата.");
