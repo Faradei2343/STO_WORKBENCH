@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -7,13 +7,22 @@ using ClosedXML.Excel;
 
 namespace STO_WORKBENCH.FileNameExporter
 {
+    // Модель одной строки результата: связывает исходный файл с вычисленными
+    // для него значениями (новое имя, целевая папка сортировки, ключ группировки).
     public class FileNameExportItem
     {
+        // Порядковый номер файла в итоговом списке (нумерация с 1; после удаления дублей пересчитывается).
         public int Number { get; set; }
+        // Исходное имя файла без пути (с расширением).
         public string SourceFileName { get; set; }
+        // Итоговое имя, полученное применением шаблона (TemplateEngine.ApplyTemplate).
         public string ResultName { get; set; }
+        // Полный путь к исходному файлу на диске.
         public string FullPath { get; set; }
+        // Имя папки, в которую файл должен попасть по правилам сортировки;
+        // пустая строка — ни одно правило не подошло.
         public string TargetFolder { get; set; }
+        // Ключ группировки (например номер комплекта); пустая строка, если группировка выключена.
         public string GroupKey { get; set; }
     }
 

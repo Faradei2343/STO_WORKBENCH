@@ -1,0 +1,542 @@
+@page "/pdf-filler"
+@using System.IO.Compression
+
+@inject WebSettingsStore SettingsStore
+@inject DownloadRegistry Downloads
+@implements IDisposable
+
+<h1 class="sb-page-title">✍ Автозаполнение сервисных листов</h1>
+<p class="sb-page-subtitle">Выберите файлы, настройте параметры и запустите обработку</p>
+
+@if (!string.IsNullOrEmpty(_alertMessage))
+{
+    <div class="sb-alert @_alertClass">
+        @_alertMessage
+        @if (!string.IsNullOrEmpty(_downloadUrl))
+        {
+            <span> </span><a href="@_downloadUrl">Скачать архив (@_downloadFileName)</a>
+        }
+    </div>
+}
+
+<div class="sb-card">
+    <h3>Настройки</h3>
+    <div class="sb-grid sb-cols-2">
+        <div class="sb-field">
+            <label>Папка с исходными PDF-файлами</label>
+            <input class="sb-input" @bind="_settings.PdfInputPath" disabled="@_isProcessing" />
+        </div>
+        <div class="sb-field">
+            <label>Папка для сохранения результатов</label>
+            <input class="sb-input" @bind="_settings.PdfOutputPath" disabled="@_isProcessing" />
+        </div>
+    </div>
+    <div class="sb-grid sb-cols-3">
+        <div class="sb-field">
+            <label>Фамилия исполнителя</label>
+            <input class="sb-input" @bind="_settings.PdfLastName" disabled="@_isProcessing" />
+        </div>
+        <div class="sb-field">
+            <label>Имя исполнителя</label>
+            <input class="sb-input" @bind="_settings.PdfFirstName" disabled="@_isProcessing" />
+        </div>
+        <div class="sb-field">
+            <label>Отчество исполнителя</label>
+            <input class="sb-input" @bind="_settings.PdfPatronymic" disabled="@_isProcessing" />
+        </div>
+    </div>
+    <div class="sb-toolbar">
+        <button class="sb-btn sb-btn-secondary" @onclick="SaveSettings" disabled="@_isProcessing">Сохранить настройки</button>
+    </div>
+</div>
+
+<div class="sb-card">
+    <h3>Список PDF-файлов</h3>
+    <div class="sb-toolbar">
+        <button class="sb-btn sb-btn-secondary" @onclick="RefreshFileList" disabled="@_isProcessing">Обновить список</button>
+        <button class="sb-btn sb-btn-secondary" @onclick="SelectAllFiles" disabled="@_isProcessing">Выбрать все</button>
+        <button class="sb-btn sb-btn-secondary" @onclick="DeselectAllFiles" disabled="@_isProcessing">Снять все</button>
+        <button class="sb-btn sb-btn-secondary" @onclick="InvertSelection" disabled="@_isProcessing">Инвертировать</button>
+    </div>
+    @if (_files.Count == 0)
+    {
+        <p class="sb-muted">Список файлов пуст. Укажите входную папку в настройках и нажмите «Обновить список».</p>
+    }
+    else
+    {
+        <div class="sb-table-wrap">
+            <table class="sb-table">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">✔</th>
+                        <th>Имя файла</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in _files)
+                    {
+                        <tr @onclick="() => _currentFileName = item.Name" style="cursor: pointer;">
+                            <td><input type="checkbox" @bind="item.Selected" disabled="@_isProcessing" @onclick:stopPropagation /></td>
+                            <td>
+                                @item.Name
+                                @if (_currentFileName == item.Name)
+                                {
+                                    <span class="sb-badge sb-badge-info" style="margin-left: 8px;">текущий</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+<div class="sb-card">
+    <h3>Режим обработки и опции</h3>
+
+    <label class="sb-checkbox">
+        <input type="radio" name="pdfProcessMode" checked="@_processAll"
+               @onchange="@(() => _processAll = true)" disabled="@_isProcessing" />
+        <span>Все выбранные файлы</span>
+    </label>
+    <label class="sb-checkbox">
+        <input type="radio" name="pdfProcessMode" checked="@(!_processAll)"
+               @onchange="@(() => _processAll = false)" disabled="@_isProcessing" />
+        <span>Только текущий (выделенный)</span>
+    </label>
+
+    <label class="sb-checkbox">
+        <input type="checkbox" checked="@_useCustomDate" @onchange="OnCustomDateChanged" disabled="@_isProcessing" />
+        <span>Своя дата</span>
+    </label>
+    @if (_useCustomDate)
+    {
+        <div class="sb-grid sb-cols-2">
+            <div class="sb-field">
+                <label>Дата и время закрытия заявки</label>
+                <input type="date" class="sb-input" value="@_customDate.ToString("yyyy-MM-dd")"
+                       @onchange="OnCustomDateInputChanged" disabled="@_isProcessing" />
+            </div>
+            <div class="sb-field">
+                <label>Время</label>
+                <input type="time" class="sb-input" value="@_customTime"
+                       @onchange="OnCustomTimeInputChanged" disabled="@_isProcessing" />
+            </div>
+        </div>
+    }
+
+    <label class="sb-checkbox">
+        <input type="checkbox" checked="@_monthYearOnly" @onchange="OnMonthYearOnlyChanged" disabled="@_isProcessing" />
+        <span>Только месяц и год</span>
+    </label>
+
+    <label class="sb-checkbox">
+        <input type="checkbox" checked="@_useCustomApplicant" @onchange="OnCustomApplicantChanged" disabled="@_isProcessing" />
+        <span>Свой заявитель</span>
+    </label>
+    @if (_useCustomApplicant)
+    {
+        <div class="sb-grid sb-cols-3">
+            <div class="sb-field">
+                <label>Фамилия</label>
+                <input class="sb-input" @bind="_applicantLastName" disabled="@_isProcessing" />
+            </div>
+            <div class="sb-field">
+                <label>Имя</label>
+                <input class="sb-input" @bind="_applicantFirstName" disabled="@_isProcessing" />
+            </div>
+            <div class="sb-field">
+                <label>Отчество</label>
+                <input class="sb-input" @bind="_applicantPatronymic" disabled="@_isProcessing" />
+            </div>
+        </div>
+    }
+
+    @if (_isProcessing)
+    {
+        <div class="sb-progress"><div style="width: @ProgressPercent%"></div></div>
+    }
+
+    <div class="sb-toolbar">
+        <button class="sb-btn sb-btn-primary" @onclick="ProcessFiles" disabled="@_isProcessing">▶ Обработать СЛ</button>
+        @if (_isProcessing)
+        {
+            <button class="sb-btn sb-btn-danger" @onclick="CancelProcessing">Отменить</button>
+        }
+    </div>
+</div>
+
+<div class="sb-statusbar">
+    <span>@_statusText</span>
+    <span style="margin-left: auto;">Файлов: @_files.Count | Выбрано: @SelectedCount</span>
+</div>
+
+<div class="sb-card">
+    <h3>Лог операций</h3>
+    <LogPanel Lines="@_log" />
+</div>
+
+@code {
+    private readonly List<string> _log = new();
+    private readonly List<PdfFileItem> _files = new();
+    private WebSettings _settings = new();
+
+    private string? _alertMessage;
+    private string _alertClass = "sb-alert-warning";
+    private string? _downloadUrl;
+    private string? _downloadFileName;
+
+    private string _statusText = "Готов";
+    private string? _currentFileName;
+    private bool _processAll = true;
+
+    private bool _useCustomDate;
+    private bool _monthYearOnly;
+    private bool _useCustomApplicant;
+    private DateTime _customDate = DateTime.Today;
+    private string _customTime = "12:00";
+    private string _applicantLastName = string.Empty;
+    private string _applicantFirstName = string.Empty;
+    private string _applicantPatronymic = string.Empty;
+
+    private bool _isProcessing;
+    private CancellationTokenSource? _cts;
+    private int _progressDone;
+    private int _progressTotal;
+
+    private int SelectedCount => _files.Count(f => f.Selected);
+    private int ProgressPercent => _progressTotal == 0 ? 0 : _progressDone * 100 / _progressTotal;
+
+    protected override void OnInitialized()
+    {
+        _settings = SettingsStore.Load();
+        if (!string.IsNullOrWhiteSpace(_settings.PdfInputPath))
+            RefreshFileListCore();
+    }
+
+    public void Dispose() => _cts?.Dispose();
+
+    private void ShowAlert(string message, string cssClass = "sb-alert-warning")
+    {
+        _alertMessage = message;
+        _alertClass = cssClass;
+        if (cssClass != "sb-alert-success")
+            _downloadUrl = null;
+    }
+
+    private void AddLog(string message)
+    {
+        _log.Add(message);
+        _ = InvokeSafeAsync();
+    }
+
+    private async Task InvokeSafeAsync()
+    {
+        try { await InvokeAsync(StateHasChanged); }
+        catch (ObjectDisposedException) { }
+    }
+
+    // ── Настройки ──────────────────────────────────────────────────────
+
+    private void SaveSettings()
+    {
+        if (!ValidateSettings()) return;
+        SettingsStore.Save(_settings);
+        ShowAlert("Настройки сохранены!", "sb-alert-success");
+    }
+
+    private bool ValidateSettings()
+    {
+        if (string.IsNullOrWhiteSpace(_settings.PdfInputPath)) { ShowAlert("Укажите путь к исходным файлам!"); return false; }
+        if (string.IsNullOrWhiteSpace(_settings.PdfOutputPath)) { ShowAlert("Укажите путь для сохранения!"); return false; }
+        if (string.IsNullOrWhiteSpace(_settings.PdfLastName)) { ShowAlert("Укажите фамилию!"); return false; }
+        if (string.IsNullOrWhiteSpace(_settings.PdfFirstName)) { ShowAlert("Укажите имя!"); return false; }
+        if (string.IsNullOrWhiteSpace(_settings.PdfPatronymic)) { ShowAlert("Укажите отчество!"); return false; }
+        if (!Directory.Exists(_settings.PdfInputPath)) { ShowAlert($"Папка не найдена: {_settings.PdfInputPath}"); return false; }
+        if (!Directory.Exists(_settings.PdfOutputPath)) { ShowAlert($"Папка не найдена: {_settings.PdfOutputPath}"); return false; }
+        return true;
+    }
+
+    // ── Список файлов ──────────────────────────────────────────────────
+
+    private void RefreshFileList()
+    {
+        if (string.IsNullOrWhiteSpace(_settings.PdfInputPath))
+        {
+            ShowAlert("Укажите путь к исходным файлам!");
+            return;
+        }
+        RefreshFileListCore();
+    }
+
+    private void RefreshFileListCore()
+    {
+        _files.Clear();
+        _currentFileName = null;
+
+        var inputPath = _settings.PdfInputPath;
+        if (string.IsNullOrWhiteSpace(inputPath)) return;
+
+        if (!Directory.Exists(inputPath))
+        {
+            AddLog($"!!Папка не найдена: {inputPath}!!");
+            return;
+        }
+
+        foreach (var file in new DirectoryInfo(inputPath).GetFiles("*.pdf").OrderBy(f => f.Name))
+            _files.Add(new PdfFileItem { Name = file.Name, Selected = true });
+
+        if (_files.Count > 0)
+            _currentFileName = _files[0].Name;
+    }
+
+    private void SelectAllFiles()
+    {
+        foreach (var f in _files) f.Selected = true;
+    }
+
+    private void DeselectAllFiles()
+    {
+        foreach (var f in _files) f.Selected = false;
+    }
+
+    private void InvertSelection()
+    {
+        foreach (var f in _files) f.Selected = !f.Selected;
+    }
+
+    // ── Опции ──────────────────────────────────────────────────────────
+
+    private void OnCustomDateChanged(ChangeEventArgs e)
+    {
+        _useCustomDate = e.Value is bool b && b;
+        if (_useCustomDate) _monthYearOnly = false;
+    }
+
+    private void OnMonthYearOnlyChanged(ChangeEventArgs e)
+    {
+        _monthYearOnly = e.Value is bool b && b;
+        if (_monthYearOnly) _useCustomDate = false;
+    }
+
+    private void OnCustomApplicantChanged(ChangeEventArgs e)
+    {
+        _useCustomApplicant = e.Value is bool b && b;
+    }
+
+    private void OnCustomDateInputChanged(ChangeEventArgs e)
+    {
+        if (DateTime.TryParse(e.Value?.ToString(), out var date))
+            _customDate = date;
+    }
+
+    private void OnCustomTimeInputChanged(ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString();
+        if (!string.IsNullOrEmpty(value))
+            _customTime = value;
+    }
+
+    private PdfProcessingOptions BuildProcessingOptions()
+    {
+        var options = new PdfProcessingOptions
+        {
+            UseCustomDate = _useCustomDate,
+            FillOnlyMonthYear = _monthYearOnly,
+            UseCustomApplicant = _useCustomApplicant
+        };
+
+        if (options.UseCustomDate)
+        {
+            var date = _customDate.Date;
+            options.CustomDateTime = TimeSpan.TryParse(_customTime, out var time) ? date.Add(time) : date;
+        }
+
+        if (options.UseCustomApplicant)
+        {
+            options.CustomApplicant = new ApplicantInfo
+            {
+                LastName = _applicantLastName.Trim(),
+                FirstName = _applicantFirstName.Trim(),
+                Patronymic = _applicantPatronymic.Trim()
+            };
+        }
+
+        return options;
+    }
+
+    // ── Обработка ──────────────────────────────────────────────────────
+
+    private void CancelProcessing() => _cts?.Cancel();
+
+    private async Task ProcessFiles()
+    {
+        ShowAlert(string.Empty);
+        _downloadUrl = null;
+        _downloadFileName = null;
+
+        if (!ValidateSettings()) return;
+
+        var appSettings = new AppSettings
+        {
+            InputPath = _settings.PdfInputPath.Trim(),
+            OutputPath = _settings.PdfOutputPath.Trim(),
+            LastName = _settings.PdfLastName.Trim(),
+            FirstName = _settings.PdfFirstName.Trim(),
+            Patronymic = _settings.PdfPatronymic.Trim()
+        };
+
+        if (!appSettings.IsValid())
+        {
+            ShowAlert("Настройки не заданы!");
+            return;
+        }
+
+        if (_files.Count == 0)
+        {
+            ShowAlert("Список файлов пуст!");
+            return;
+        }
+
+        var filesToProcess = new List<string>();
+        if (_processAll)
+        {
+            filesToProcess.AddRange(_files.Where(f => f.Selected).Select(f => f.Name));
+        }
+        else if (!string.IsNullOrEmpty(_currentFileName))
+        {
+            filesToProcess.Add(_currentFileName);
+        }
+
+        if (filesToProcess.Count == 0)
+        {
+            ShowAlert("Не выбрано ни одного файла для обработки.");
+            return;
+        }
+
+        var options = BuildProcessingOptions();
+
+        _isProcessing = true;
+        _cts = new CancellationTokenSource();
+        _progressDone = 0;
+        _progressTotal = filesToProcess.Count;
+        _statusText = "Готов";
+
+        var processedCount = 0;
+        var errorCount = 0;
+        var cancelled = false;
+        var processedOutputs = new List<string>();
+
+        var service = new PdfService(AddLog, status => _statusText = status);
+
+        try
+        {
+            await Task.Run(() =>
+            {
+                foreach (var fileName in filesToProcess)
+                {
+                    if (_cts.IsCancellationRequested)
+                    {
+                        cancelled = true;
+                        AddLog("!!Обработка отменена пользователем!!");
+                        break;
+                    }
+
+                    try
+                    {
+                        if (service.ProcessPdf(fileName, appSettings, options))
+                        {
+                            MoveProcessedFile(fileName, appSettings);
+                            processedCount++;
+                            processedOutputs.Add(Path.Combine(appSettings.OutputPath, fileName));
+                            AddLog($"**Обработан: {fileName}");
+                        }
+                        else
+                        {
+                            errorCount++;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        AddLog($"ОШИБКА: Ошибка обработки: {ex.Message}");
+                        errorCount++;
+                    }
+
+                    _progressDone++;
+                    _ = InvokeSafeAsync();
+                }
+
+                if (processedOutputs.Count > 0)
+                {
+                    try
+                    {
+                        var zipBytes = BuildZip(processedOutputs);
+                        var zipName = $"Заполненные СЛ {DateTime.Now:dd-MM-yyyy HH-mm}.zip";
+                        _downloadUrl = $"/download/{Downloads.Add(zipBytes, zipName, "application/zip")}";
+                        _downloadFileName = zipName;
+                    }
+                    catch (Exception ex)
+                    {
+                        AddLog($"ОШИБКА: Ошибка создания архива: {ex.Message}");
+                    }
+                }
+            });
+        }
+        finally
+        {
+            _isProcessing = false;
+            _statusText = "Готов";
+            _cts.Dispose();
+            _cts = null;
+        }
+
+        RefreshFileListCore();
+
+        if (cancelled)
+            ShowAlert($"Обработка отменена. Обработано: {processedCount}, с ошибками: {errorCount}");
+        else if (errorCount == 0 && processedCount > 0)
+            ShowAlert($"Обработано файлов: {processedCount}", "sb-alert-success");
+        else if (errorCount > 0)
+            ShowAlert($"Обработано: {processedCount}, с ошибками: {errorCount}");
+        else
+            ShowAlert("Не выбрано ни одного файла для обработки.");
+    }
+
+    private void MoveProcessedFile(string fileName, AppSettings settings)
+    {
+        try
+        {
+            var archiveDir = Path.Combine(settings.InputPath, $"Заполненные {DateTime.Now:dd-MM-yyyy}");
+            Directory.CreateDirectory(archiveDir);
+
+            File.Move(Path.Combine(settings.InputPath, fileName), Path.Combine(archiveDir, fileName));
+        }
+        catch (Exception ex)
+        {
+            AddLog($"ОШИБКА: Ошибка перемещения файла: {ex.Message}");
+        }
+    }
+
+    private static byte[] BuildZip(List<string> filePaths)
+    {
+        using var ms = new MemoryStream();
+        using (var archive = new ZipArchive(ms, ZipArchiveMode.Create, leaveOpen: true))
+        {
+            foreach (var path in filePaths)
+            {
+                var entry = archive.CreateEntry(Path.GetFileName(path));
+                using var entryStream = entry.Open();
+                var bytes = File.ReadAllBytes(path);
+                entryStream.Write(bytes, 0, bytes.Length);
+            }
+        }
+        return ms.ToArray();
+    }
+
+    private sealed class PdfFileItem
+    {
+        public string Name { get; set; } = string.Empty;
+        public bool Selected { get; set; } = true;
+    }
+}

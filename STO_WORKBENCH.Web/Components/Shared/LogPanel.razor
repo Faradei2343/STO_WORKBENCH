@@ -1,0 +1,24 @@
+@* Общий компонент лога в стиле RichTextBox из WinForms-версии *@
+
+<div class="sb-log">
+    @foreach (var line in Lines)
+    {
+        if (line.StartsWith("!!") || line.StartsWith("ОШИБКА") || line.Contains("Ошибка"))
+        {
+            <span class="sb-log-err">@line</span>
+        }
+        else if (line.StartsWith("**"))
+        {
+            <span class="sb-log-ok">@line</span>
+        }
+        else
+        {
+            @line
+        }
+        <br />
+    }
+</div>
+
+@code {
+    [Parameter] public IReadOnlyList<string> Lines { get; set; } = Array.Empty<string>();
+}

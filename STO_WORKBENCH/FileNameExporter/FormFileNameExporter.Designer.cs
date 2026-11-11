@@ -1,9 +1,12 @@
-﻿namespace STO_WORKBENCH.FileNameExporter
+namespace STO_WORKBENCH.FileNameExporter
 {
     partial class FormFileNameExporter
     {
+        // Контейнер компонентов: требуется дизайнером для отслеживания компонентов
+        // с неуправляемыми ресурсами (у этой формы таких нет, остаётся null).
         private System.ComponentModel.IContainer components = null;
 
+        // При уничтожении формы освобождает управляемые компоненты, если они были созданы.
         protected override void Dispose(bool disposing)
         {
             if (disposing && (components != null))
@@ -16,6 +19,9 @@
 
         #region Windows Form Designer generated code
 
+        // Метод автогенерации дизайнера: создаёт все контролы формы, задаёт их свойства
+        // и добавляет в контейнеры. Вручную не редактировать — изменения будут
+        // перезаписаны при следующем сохранении формы в дизайнере Visual Studio.
         private void InitializeComponent()
         {
             this.lblFolder = new System.Windows.Forms.Label();

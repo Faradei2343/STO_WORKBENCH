@@ -1,3 +1,4 @@
 <Solution>
+  <Project Path="STO_WORKBENCH.Web/STO_WORKBENCH.Web.csproj" />
   <Project Path="STO_WORKBENCH/STO_WORKBENCH.csproj" />
 </Solution>

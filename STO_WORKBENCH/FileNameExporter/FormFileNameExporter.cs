@@ -1,14 +1,24 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
 
 namespace STO_WORKBENCH.FileNameExporter
 {
+    // Форма "Экспорт имён файлов и сортировка" — интерфейс модуля FileNameExporter.
+    // Позволяет выбрать папку с файлами, задать шаблон итогового имени, правила
+    // сортировки по папкам и группировки, посмотреть результат в сетке предпросмотра,
+    // выгрузить его в Excel и физически разложить файлы по папкам (копирование/перемещение).
     public partial class FormFileNameExporter : Form
     {
+        // Движок экспорта: вся логика поиска файлов, применения шаблонов, записи Excel
+        // и раскладки по папкам живёт в этом классе; форма лишь собирает настройки
+        // из контролов и отображает результат.
         private readonly FileNameExporter _exporter = new FileNameExporter();
 
+        // Варианты структуры папок при организации файлов: только папки сортировки,
+        // только папки группировки либо комбинация обоих уровней в двух порядках.
+        // XML-комментарии членов ниже описывают каждый вариант с примером иерархии.
         public enum FileOrganizeFolderStructure
         {
             /// <summary>

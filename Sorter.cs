@@ -1,111 +1,121 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
+using System.IO;
 
-public class Class1
+internal static class Sorter
 {
-    string path = null;
+    static int Main()
+    {
+        string path = null;
+        while (path == null)
+        {
+            Console.WriteLine("Write the path to directory");
+            path = Console.ReadLine();
+            if (!Directory.Exists(path))
+            {
+                path = null;
+                Console.WriteLine("!!Directory does not exist!!");
+            }
+        }
+
+        DirectoryInfo directoryInfo = new DirectoryInfo(path);
+        Console.WriteLine("**Directory exist**");
+        Console.WriteLine("---------------------------------------------------------------------------");
+        Console.WriteLine("**Sorting documents**");
+        Console.WriteLine("---------------------------------------------------------------------------");
+
+        List<string> detFiles = GetDetFilesList(directoryInfo);
+        if (detFiles.Count == 0)
+        {
+            Console.WriteLine("!!det_*.xls files do not exist!!");
+        }
+        else
+        {
+            foreach (string item in detFiles)
+            {
+                try
+                {
+                    string fileName = GetFileName(item);
+                    string directoryName = GetDirectoryName(fileName);
+                    SortDetFiles(directoryName, fileName, directoryInfo, path);
+                    SortOdFiles(directoryName, directoryInfo, path);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("!!ERROR processing " + GetFileName(item) + ": " + ex.Message);
+                }
+            }
+        }
+
+        Console.WriteLine("---------------------------------------------------------------------------");
+        Console.WriteLine("**Sorting complete**");
+        return 0;
+    }
 
     static List<string> GetDetFilesList(DirectoryInfo directoryInfo)
     {
         List<string> detList = new List<string>();
-        foreach (var filename in directoryInfo.GetFiles("det_*.xls"))
+        foreach (FileInfo file in directoryInfo.GetFiles("det_*.xls"))
         {
-            detList.Add(filename.ToString());
+            detList.Add(file.FullName);
         }
-
-        if (detList.Count > 0)
-        {
-            return detList;
-        }
-        else
-        {
-            Console.WriteLine("!!det_.xls files does not exists!!");
-            return null;
-        }
+        return detList;
     }
 
     static string GetFileName(string filePath)
     {
-        string fileName = Path.GetFileName(filePath);
-        return fileName;
+        return Path.GetFileName(filePath);
     }
 
     static string GetDirectoryName(string fileName)
     {
-        string[] words = fileName.Split('_');
-        string directoryName = words[2];
-        return directoryName;
+        string[] words = Path.GetFileNameWithoutExtension(fileName).Split('_');
+        if (words.Length < 3)
+        {
+            throw new InvalidOperationException("invalid file name format, expected det_<...>_<name>_<...>.xls");
+        }
+        return words[2];
     }
 
-
-    static int SortDetFiles(string directoryName, string fileName, DirectoryInfo directoryInfo, string path)
+    static void SortDetFiles(string directoryName, string fileName, DirectoryInfo directoryInfo, string path)
     {
         Console.WriteLine("**Creation directory " + directoryName + "**");
         directoryInfo.CreateSubdirectory(directoryName);
-        string subDirectoryPath = path + @"\" + directoryName + @"\" + fileName;
-        string sourceFilePath = path + @"\" + fileName;
-        File.Move(sourceFilePath, subDirectoryPath);
-        return 0;
+        string sourceFilePath = Path.Combine(path, fileName);
+        string subDirectoryPath = Path.Combine(path, directoryName, fileName);
+        MoveFile(sourceFilePath, subDirectoryPath, fileName, directoryName);
     }
-
 
     static string GetOdFile(string directoryName, DirectoryInfo directoryInfo)
     {
-        List<string> odPair = new List<string>();
-        foreach (var filename in directoryInfo.GetFiles("od_*_" + directoryName + "_*.xls"))
+        foreach (FileInfo file in directoryInfo.GetFiles("od_*_" + directoryName + "_*.xls"))
         {
-            odPair.Add(filename.ToString());
+            return file.FullName;
+        }
+        return null;
+    }
+
+    static void SortOdFiles(string directoryName, DirectoryInfo directoryInfo, string path)
+    {
+        string odFilePath = GetOdFile(directoryName, directoryInfo);
+        if (odFilePath == null)
+        {
+            Console.WriteLine("!!od-file for " + directoryName + " does not exist!!");
+            return;
         }
 
-        if (odPair.Count > 0)
+        string fileName = GetFileName(odFilePath);
+        string subDirectoryPath = Path.Combine(path, directoryName, fileName);
+        MoveFile(odFilePath, subDirectoryPath, fileName, directoryName);
+    }
+
+    static void MoveFile(string sourceFilePath, string targetFilePath, string fileName, string directoryName)
+    {
+        if (File.Exists(targetFilePath))
         {
-            return odPair[0];
+            Console.WriteLine("!!file " + fileName + " already exists in " + directoryName + "!!");
+            return;
         }
-        else
-        {
-            return null;
-        }
+        File.Move(sourceFilePath, targetFilePath);
     }
-
-    static int SortOdFiles(string directoryName, DirectoryInfo directoryInfo, string path)
-    {
-        string subDirectoryPath = path + @"\" + directoryName + @"\" + GetFileName(GetOdFile(directoryName, directoryInfo));
-        File.Move(GetOdFile(directoryName, directoryInfo), subDirectoryPath);
-        return 0;
-    }
-
-
-while (path == null)
-{
-    Console.WriteLine("Write the path to directory");
-    path = Console.ReadLine();
-    if (!Directory.Exists(path))
-    {
-        path = null;
-        Console.WriteLine("!!Directory does not exist!!");
-    }
-}
-DirectoryInfo directoryInfo = new DirectoryInfo(path);
-Console.WriteLine("**Directory exist**");
-Console.WriteLine("---------------------------------------------------------------------------");
-Console.WriteLine("**Sorting documents**");
-Console.WriteLine("---------------------------------------------------------------------------");
-
-if (GetDetFilesList(directoryInfo) != null)
-{
-
-    foreach (var item in GetDetFilesList(directoryInfo))
-    {
-        string fileName = GetFileName(item);
-        string directoryName = GetDirectoryName(fileName);
-        SortDetFiles(directoryName, fileName, directoryInfo, path);
-        SortOdFiles(directoryName, directoryInfo, path);
-    }
-}
-Console.WriteLine("---------------------------------------------------------------------------");
-Console.WriteLine("**Sorting complete**");
-
-public Class1()
-	{
-
-	}
 }

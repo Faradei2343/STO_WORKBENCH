@@ -1,0 +1,386 @@
+/* ════════════════════════════════════════════════════════════════════
+   STO WORKBENCH — веб-палитра, повторяющая цвета WinForms-приложения
+   panelLeft  #1C2331 · panelHeader #161C28 · фон #F2F4F8
+   ════════════════════════════════════════════════════════════════════ */
+
+:root {
+    --sb-sidebar: #1C2331;
+    --sb-sidebar-header: #161C28;
+    --sb-nav-text: #BEC8DC;
+    --sb-nav-hover: #2D374B;
+    --sb-nav-active: #37445F;
+    --sb-bg: #F2F4F8;
+    --sb-text: #1C2331;
+    --sb-text-sub: #646E82;
+    --sb-text-muted: #788CAA;
+    --sb-border: #D5DAE4;
+    --sb-card: #FFFFFF;
+    --sb-input-bg: #FFFFFF;
+    --sb-table-header: #E8EBF2;
+    --sb-primary: #37445F;
+    --sb-primary-hover: #2D374B;
+    --sb-primary-active: #161C28;
+    /* Статусы — как стандартные цвета WinForms-таблиц */
+    --sb-ok-bg: #DFF0D8;
+    --sb-ok-text: #3C763D;
+    --sb-warn-bg: #FCF8E3;
+    --sb-warn-text: #8A6D3B;
+    --sb-err-bg: #F2DEDE;
+    --sb-err-text: #A94442;
+    --sb-info-bg: #E8EEF9;
+    --sb-info-text: #37445F;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: "Segoe UI", Tahoma, sans-serif;
+    font-size: 14px;
+    color: var(--sb-text);
+    background: var(--sb-bg);
+}
+
+h1:focus { outline: none; }
+
+/* ── Каркас ─────────────────────────────────────────────────────── */
+
+.app-shell { display: flex; min-height: 100vh; }
+
+.sb-sidebar {
+    width: 220px;
+    flex: 0 0 220px;
+    background: var(--sb-sidebar);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+}
+
+.sb-sidebar-header {
+    background: var(--sb-sidebar-header);
+    padding: 22px 18px 20px;
+}
+
+.sb-app-title {
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: .3px;
+    margin: 0;
+}
+
+.sb-app-subtitle {
+    color: var(--sb-text-muted);
+    font-size: 12.5px;
+    margin: 6px 0 0;
+}
+
+.sb-nav { display: flex; flex-direction: column; padding-top: 4px; }
+
+.sb-nav-link {
+    display: block;
+    padding: 15px 20px;
+    color: var(--sb-nav-text);
+    text-decoration: none;
+    font-size: 14px;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+    transition: background .12s ease, color .12s ease;
+}
+
+.sb-nav-link:hover { background: var(--sb-nav-hover); color: #E4EAF4; }
+
+.sb-nav-link.active {
+    background: var(--sb-nav-active);
+    color: #FFFFFF;
+    border-left: 3px solid #788CAA;
+    padding-left: 17px;
+}
+
+.sb-content {
+    flex: 1;
+    padding: 28px 36px;
+    min-width: 0;
+}
+
+/* ── Типографика страниц ────────────────────────────────────────── */
+
+.sb-page-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--sb-text);
+    margin: 0 0 4px;
+}
+
+.sb-page-subtitle { color: var(--sb-text-sub); margin: 0 0 22px; font-size: 14px; }
+
+/* ── Карточки и формы ───────────────────────────────────────────── */
+
+.sb-card {
+    background: var(--sb-card);
+    border: 1px solid var(--sb-border);
+    border-radius: 6px;
+    padding: 20px 22px;
+    margin-bottom: 18px;
+}
+
+.sb-card h3 {
+    margin: 0 0 14px;
+    font-size: 15px;
+    color: var(--sb-text);
+}
+
+.sb-field { margin-bottom: 14px; }
+
+.sb-field label {
+    display: block;
+    font-size: 12.5px;
+    color: var(--sb-text-sub);
+    margin-bottom: 5px;
+}
+
+.sb-input, .sb-select, .sb-textarea {
+    width: 100%;
+    padding: 8px 10px;
+    font: inherit;
+    color: var(--sb-text);
+    background: var(--sb-input-bg);
+    border: 1px solid var(--sb-border);
+    border-radius: 4px;
+    outline: none;
+    transition: border-color .12s ease, box-shadow .12s ease;
+}
+
+.sb-input:focus, .sb-select:focus, .sb-textarea:focus {
+    border-color: var(--sb-primary);
+    box-shadow: 0 0 0 2px rgba(55, 68, 95, .18);
+}
+
+.sb-input:disabled, .sb-select:disabled {
+    background: #EDF0F5;
+    color: var(--sb-text-sub);
+    cursor: not-allowed;
+}
+
+.sb-textarea { min-height: 90px; resize: vertical; font-family: Consolas, monospace; font-size: 12.5px; }
+
+.sb-checkbox { display: flex; align-items: center; gap: 8px; margin: 8px 0; cursor: pointer; }
+.sb-checkbox input[type=checkbox] { width: 15px; height: 15px; accent-color: var(--sb-primary); cursor: pointer; }
+.sb-checkbox span { font-size: 13.5px; }
+
+/* ── Кнопки ─────────────────────────────────────────────────────── */
+
+.sb-btn {
+    display: inline-block;
+    padding: 8px 16px;
+    font: inherit;
+    font-size: 13.5px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: background .12s ease, border-color .12s ease;
+}
+
+.sb-btn:disabled { opacity: .55; cursor: not-allowed; }
+
+.sb-btn-primary { background: var(--sb-primary); color: #fff; }
+.sb-btn-primary:hover:not(:disabled) { background: var(--sb-primary-hover); }
+
+.sb-btn-secondary {
+    background: #fff;
+    color: var(--sb-text);
+    border-color: var(--sb-border);
+}
+.sb-btn-secondary:hover:not(:disabled) { background: #EDF0F5; }
+
+.sb-btn-danger { background: #8C3A38; color: #fff; }
+.sb-btn-danger:hover:not(:disabled) { background: #75312F; }
+
+.sb-toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 14px 0; }
+
+/* ── Таблицы ────────────────────────────────────────────────────── */
+
+.sb-table-wrap { overflow-x: auto; border: 1px solid var(--sb-border); border-radius: 6px; }
+
+table.sb-table { width: 100%; border-collapse: collapse; background: #fff; font-size: 13px; }
+
+table.sb-table th {
+    background: var(--sb-table-header);
+    color: var(--sb-text);
+    text-align: left;
+    padding: 9px 12px;
+    font-weight: 600;
+    border-bottom: 1px solid var(--sb-border);
+    white-space: nowrap;
+}
+
+table.sb-table td { padding: 7px 12px; border-bottom: 1px solid #EDF0F5; vertical-align: middle; }
+
+table.sb-table tr:last-child td { border-bottom: 0; }
+
+table.sb-table tr:hover td { background: #F7F9FC; }
+
+tr.sb-row-ok td { background: var(--sb-ok-bg); color: var(--sb-ok-text); }
+tr.sb-row-warn td { background: var(--sb-warn-bg); color: var(--sb-warn-text); }
+tr.sb-row-err td { background: var(--sb-err-bg); color: var(--sb-err-text); }
+
+/* ── Лог-панель ─────────────────────────────────────────────────── */
+
+.sb-log {
+    background: #161C28;
+    color: #B9C4D8;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 12px;
+    border-radius: 6px;
+    padding: 12px 14px;
+    height: 260px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+    line-height: 1.55;
+}
+
+.sb-log .sb-log-err { color: #E8A9A7; }
+.sb-log .sb-log-ok { color: #9CC79C; }
+
+/* ── Статус-бары и бейджи ───────────────────────────────────────── */
+
+.sb-statusbar {
+    display: flex;
+    gap: 18px;
+    padding: 9px 14px;
+    background: var(--sb-sidebar-header);
+    color: var(--sb-nav-text);
+    border-radius: 6px;
+    font-size: 12.5px;
+    margin-bottom: 14px;
+}
+
+.sb-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.sb-badge-ok { background: var(--sb-ok-bg); color: var(--sb-ok-text); }
+.sb-badge-warn { background: var(--sb-warn-bg); color: var(--sb-warn-text); }
+.sb-badge-err { background: var(--sb-err-bg); color: var(--sb-err-text); }
+.sb-badge-info { background: var(--sb-info-bg); color: var(--sb-info-text); }
+
+/* ── Алерты вместо MessageBox-уведомлений ───────────────────────── */
+
+.sb-alert {
+    padding: 11px 14px;
+    border-radius: 5px;
+    margin: 12px 0;
+    font-size: 13.5px;
+    border: 1px solid transparent;
+}
+
+.sb-alert-success { background: var(--sb-ok-bg); color: var(--sb-ok-text); border-color: #C6E0B4; }
+.sb-alert-warning { background: var(--sb-warn-bg); color: var(--sb-warn-text); border-color: #E8D9A0; }
+.sb-alert-error { background: var(--sb-err-bg); color: var(--sb-err-text); border-color: #E0B6B5; }
+.sb-alert-info { background: var(--sb-info-bg); color: var(--sb-info-text); border-color: #C4D0E8; }
+
+/* ── Прогресс-бар ───────────────────────────────────────────────── */
+
+.sb-progress {
+    width: 100%;
+    height: 8px;
+    background: #E3E7EE;
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 8px 0;
+}
+
+.sb-progress > div {
+    height: 100%;
+    background: var(--sb-primary);
+    transition: width .2s ease;
+}
+
+/* ── Вкладки (как TabControl) ───────────────────────────────────── */
+
+.sb-tabs { display: flex; gap: 2px; border-bottom: 2px solid var(--sb-border); margin-bottom: 20px; }
+
+.sb-tab {
+    padding: 9px 20px;
+    border: 0;
+    background: transparent;
+    font: inherit;
+    font-size: 14px;
+    color: var(--sb-text-sub);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+}
+
+.sb-tab:hover { color: var(--sb-text); background: #E9EDF3; }
+
+.sb-tab.active {
+    color: var(--sb-text);
+    font-weight: 600;
+    border-bottom-color: var(--sb-primary);
+}
+
+/* ── Главная страница ───────────────────────────────────────────── */
+
+.sb-welcome { padding: 120px 40px; }
+
+.sb-welcome h1 { font-size: 34px; font-weight: 700; color: var(--sb-text); margin: 0 0 10px; }
+.sb-welcome p { font-size: 15px; color: var(--sb-text-sub); margin: 0; }
+
+/* ── Утилиты ────────────────────────────────────────────────────── */
+
+.sb-grid { display: grid; gap: 14px; }
+.sb-cols-2 { grid-template-columns: 1fr 1fr; }
+.sb-cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+.sb-muted { color: var(--sb-text-sub); font-size: 12.5px; }
+
+.sb-hint { font-size: 12px; color: var(--sb-text-muted); margin-top: 4px; }
+
+@media (max-width: 900px) {
+    .sb-cols-2, .sb-cols-3 { grid-template-columns: 1fr; }
+    .sb-content { padding: 18px; }
+}
+
+/* ── Служебные стили Blazor ─────────────────────────────────────── */
+
+.valid.modified:not([type=checkbox]) { outline: 1px solid #26b050; }
+.invalid { outline: 1px solid #e50000; }
+.validation-message { color: #e50000; }
+
+.blazor-error-boundary {
+    background: #b32121;
+    padding: 1rem;
+    color: white;
+}
+
+#blazor-error-ui {
+    background: #ffffe0;
+    bottom: 0;
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, .2);
+    display: none;
+    left: 0;
+    padding: .6rem 1.25rem .7rem 1.25rem;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+}
+
+#blazor-error-ui .dismiss {
+    cursor: pointer;
+    position: absolute;
+    right: .75rem;
+    top: .5rem;
+}

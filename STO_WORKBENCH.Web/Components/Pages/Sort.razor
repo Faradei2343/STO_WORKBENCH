@@ -1,0 +1,167 @@
+@page "/sort"
+@using System.IO.Compression
+
+<h1 class="sb-page-title">📋 Сортировка детализаций</h1>
+<p class="sb-page-subtitle">Файлы det_*.xls и соответствующие od_*_{имя}_*.xls раскладываются по подпапкам в «Сортировка детализаций» в папке Downloads.</p>
+
+<div class="sb-card">
+    <h3>Источник</h3>
+    <div class="sb-field">
+        <label>Папка-источник</label>
+        <input class="sb-input" @bind="_sourcePath" @bind:after="ValidatePath" disabled="@_isRunning" placeholder="C:\Путь\к\папке" />
+        @if (!string.IsNullOrWhiteSpace(_sourcePath) && !_pathValid)
+        {
+            <div class="sb-hint" style="color: var(--sb-err-text);">Папка не существует</div>
+        }
+        else
+        {
+            <div class="sb-hint">Укажите папку с файлами det_*.xls</div>
+        }
+    </div>
+    <div class="sb-toolbar">
+        <button class="sb-btn sb-btn-primary" disabled="@(_isRunning || !_pathValid)" @onclick="StartSort">▶ Сортировать</button>
+    </div>
+</div>
+
+@if (_sortSuccess)
+{
+    <div class="sb-alert sb-alert-success">
+        Сортировка успешно завершена!
+        @if (_downloadId != null)
+        {
+            <text>&nbsp;<a href="/download/@_downloadId">Скачать результат</a></text>
+        }
+    </div>
+}
+@if (_showWarning)
+{
+    <div class="sb-alert sb-alert-warning">Сортировка завершена с ошибками. Смотрите лог.</div>
+}
+
+<div class="sb-card">
+    <h3>Лог</h3>
+    <LogPanel Lines="@_log" />
+</div>
+
+<div class="sb-statusbar">
+    @if (_isRunning)
+    {
+        <span class="sb-badge sb-badge-info">Сортировка выполняется…</span>
+    }
+    else if (_sortSuccess)
+    {
+        <span class="sb-badge sb-badge-ok">Готово</span>
+    }
+</div>
+
+@code {
+    [Inject] private WebSettingsStore SettingsStore { get; set; } = default!;
+    [Inject] private DownloadRegistry Downloads { get; set; } = default!;
+
+    private string _sourcePath = string.Empty;
+    private string? _loggedPath;
+    private bool _pathValid;
+    private bool _isRunning;
+    private bool _sortSuccess;
+    private bool _showWarning;
+    private string? _downloadId;
+    private CancellationTokenSource? _cts;
+    private readonly List<string> _log = new();
+
+    protected override void OnInitialized()
+    {
+        var settings = SettingsStore.Load();
+        _sourcePath = settings.SorterLastFolder;
+        ValidatePath();
+    }
+
+    private void ValidatePath()
+    {
+        bool wasValid = _pathValid;
+        _pathValid = !string.IsNullOrWhiteSpace(_sourcePath) && Directory.Exists(_sourcePath);
+        if (!_pathValid)
+            return;
+
+        var settings = SettingsStore.Load();
+        if (settings.SorterLastFolder != _sourcePath)
+        {
+            settings.SorterLastFolder = _sourcePath;
+            SettingsStore.Save(settings);
+        }
+
+        if (!wasValid || _loggedPath != _sourcePath)
+        {
+            _loggedPath = _sourcePath;
+            Log($"Выбрана папка: {_sourcePath}");
+        }
+    }
+
+    private async Task StartSort()
+    {
+        if (_isRunning || !_pathValid)
+            return;
+
+        _isRunning = true;
+        _sortSuccess = false;
+        _showWarning = false;
+        _downloadId = null;
+        _cts = new CancellationTokenSource();
+        try
+        {
+            var sorter = new Sorter(Log);
+            string? downloadId = null;
+            bool success = await Task.Run(() =>
+            {
+                bool ok = sorter.Sort(_sourcePath, _cts.Token);
+                if (ok && sorter.LastTargetRoot != null)
+                    downloadId = PackZip(sorter.LastTargetRoot);
+                return ok;
+            }, _cts.Token);
+
+            _sortSuccess = success;
+            _showWarning = !success;
+            _downloadId = downloadId;
+        }
+        catch (OperationCanceledException)
+        {
+            Log("Сортировка отменена");
+        }
+        finally
+        {
+            _cts.Dispose();
+            _cts = null;
+            _isRunning = false;
+        }
+    }
+
+    private string? PackZip(string targetRoot)
+    {
+        try
+        {
+            using var ms = new MemoryStream();
+            using (var zip = new ZipArchive(ms, ZipArchiveMode.Create, leaveOpen: true))
+            {
+                foreach (var file in Directory.GetFiles(targetRoot, "*", SearchOption.AllDirectories))
+                {
+                    var entry = zip.CreateEntry(Path.GetRelativePath(targetRoot, file));
+                    using var entryStream = entry.Open();
+                    using var fileStream = File.OpenRead(file);
+                    fileStream.CopyTo(entryStream);
+                }
+            }
+            string zipName = $"Сортировка детализаций {DateTime.Now:yyyy-MM-dd}.zip";
+            return Downloads.Add(ms.ToArray(), zipName, "application/zip");
+        }
+        catch (Exception ex)
+        {
+            Log($"!!Не удалось создать архив: {ex.Message}!!");
+            return null;
+        }
+    }
+
+    private void Log(string message)
+    {
+        _log.Add(message);
+        _ = InvokeAsync(StateHasChanged);
+    }
+}

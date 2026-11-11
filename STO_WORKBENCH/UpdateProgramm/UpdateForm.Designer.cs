@@ -1,9 +1,11 @@
-﻿namespace STO_WORKBENCH.UpdateProgramm
+namespace STO_WORKBENCH.UpdateProgramm
 {
     partial class UpdateForm
     {
+        // Контейнер компонентов для дизайнера (компонентов с Dispose у формы нет).
         private System.ComponentModel.IContainer components = null;
 
+        // Освобождает компоненты формы при её уничтожении.
         protected override void Dispose(bool disposing)
         {
             if (disposing && (components != null))
@@ -11,6 +13,9 @@
             base.Dispose(disposing);
         }
 
+        // Инициализация контролов формы. Форма собирается кодом (без .resx):
+        // все контролы создаются здесь, свойства задаются построчно,
+        // обработчики событий подписываются при настройке кнопок.
         private void InitializeComponent()
         {
             panelTop = new System.Windows.Forms.Panel();

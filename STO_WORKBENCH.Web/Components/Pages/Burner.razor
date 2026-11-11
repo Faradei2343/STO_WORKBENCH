@@ -1,0 +1,430 @@
+@page "/burner"
+@using static STO_WORKBENCH.Web.Services.Models
+@implements IDisposable
+@inject BurnerStateService State
+@inject WebSettingsStore SettingsStore
+@inject IJSRuntime JS
+
+<PageTitle>Мультизапись</PageTitle>
+
+<div class="sb-page-title">💿 Многопоточная запись дисков</div>
+<div class="sb-page-subtitle">Пакетная запись подпапок на несколько пишущих приводов через IMAPI2</div>
+
+<div class="sb-card">
+    <h3>Исходные папки</h3>
+
+    <div class="sb-field">
+        <label>Корневая папка (внутри — подпапки для записи)</label>
+        <input class="sb-input" @bind="_rootFolder" disabled="@State.IsRunning"
+               placeholder="D:\Диски" />
+    </div>
+
+    <div class="sb-toolbar">
+        <button class="sb-btn sb-btn-secondary" @onclick="LoadFoldersAsync"
+                disabled="@(State.IsRunning || _busy)">
+            Загрузить папки
+        </button>
+    </div>
+
+    @if (_alertError != null)
+    {
+        <div class="sb-alert sb-alert-error">@_alertError</div>
+    }
+    @if (_alertInfo != null)
+    {
+        <div class="sb-alert sb-alert-info">@_alertInfo</div>
+    }
+    @if (_alertWarning != null)
+    {
+        <div class="sb-alert sb-alert-warning">@_alertWarning</div>
+    }
+
+    <div class="sb-table-wrap">
+        <table class="sb-table">
+            <thead>
+                <tr>
+                    <th style="width: 70px;">Выбрать</th>
+                    <th>Папка</th>
+                    <th>Размер</th>
+                    <th>Статус</th>
+                    <th>Привод</th>
+                    <th>Ошибка</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var job in _jobs)
+                {
+                    <tr class="@RowClass(job)">
+                        <td>
+                            <input type="checkbox" class="sb-checkbox" @bind="job.Selected"
+                                   disabled="@State.IsRunning" />
+                        </td>
+                        <td>@job.FolderName</td>
+                        <td>@job.SizeText</td>
+                        <td>@StatusText(job)</td>
+                        <td>@job.AssignedDrive</td>
+                        <td>@job.ErrorMessage</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (_jobs.Count == 0)
+    {
+        <p class="sb-muted">Укажите корневую папку и нажмите «Загрузить папки».</p>
+    }
+</div>
+
+<div class="sb-card">
+    <h3>Пишущие приводы</h3>
+
+    <div class="sb-toolbar">
+        <button class="sb-btn sb-btn-secondary" @onclick="DetectDrivesAsync"
+                disabled="@(State.IsRunning || _busy)">
+            🔎 Приводы
+        </button>
+    </div>
+
+    @if (_drives.Count > 0)
+    {
+        @foreach (var drive in _drives)
+        {
+            <div>
+                <label>
+                    <input type="checkbox" class="sb-checkbox" @bind="drive.Selected"
+                           disabled="@State.IsRunning" />
+                    @drive.DisplayName
+                </label>
+            </div>
+        }
+    }
+    else
+    {
+        <p class="sb-muted">Приводы еще не определены. Нажмите «🔎 Приводы».</p>
+    }
+</div>
+
+<div class="sb-card">
+    <h3>Запись</h3>
+
+    <div class="sb-toolbar">
+        <button class="sb-btn sb-btn-primary" @onclick="StartAsync"
+                disabled="@(State.IsRunning || _busy)">
+            ▶ Старт
+        </button>
+        <button class="sb-btn sb-btn-danger" @onclick="Stop"
+                disabled="@(!State.IsRunning)">
+            ■ Стоп
+        </button>
+
+        @if (State.IsRunning)
+        {
+            <span class="sb-badge sb-badge-warn">Идет запись</span>
+        }
+        else
+        {
+            <span class="sb-badge sb-badge-ok">Готово</span>
+        }
+    </div>
+
+    <p class="sb-hint">
+        Один привод последовательно записывает свою очередь папок. Ошибка одного задания
+        не останавливает остальные.
+    </p>
+</div>
+
+<div class="sb-card">
+    <h3>Лог</h3>
+    <LogPanel Lines="@_log" />
+</div>
+
+@code {
+    private string _rootFolder = string.Empty;
+    private List<BurnJob> _jobs = new();
+    private List<DriveInfoModel> _drives = new();
+    private IReadOnlyList<string> _log = Array.Empty<string>();
+
+    private bool _busy;
+    private string? _alertError;
+    private string? _alertInfo;
+    private string? _alertWarning;
+
+    protected override void OnInitialized()
+    {
+        _rootFolder = SettingsStore.Load().BurnerRootFolder;
+        State.Changed += OnStateChanged;
+        Refresh();
+    }
+
+    private void OnStateChanged()
+    {
+        _ = InvokeAsync(() =>
+        {
+            Refresh();
+            StateHasChanged();
+        });
+    }
+
+    private void Refresh()
+    {
+        _jobs = State.GetJobsSnapshot();
+        _drives = State.Drives;
+        _log = State.LogLines;
+    }
+
+    private async Task LoadFoldersAsync()
+    {
+        ClearAlerts();
+
+        if (string.IsNullOrWhiteSpace(_rootFolder) || !Directory.Exists(_rootFolder))
+        {
+            _alertError = "Не удалось прочитать выбранную папку: " + _rootFolder;
+            return;
+        }
+
+        _busy = true;
+
+        try
+        {
+            string rootPath = _rootFolder;
+
+            List<BurnJob> jobs = await Task.Run(() =>
+            {
+                var list = new List<BurnJob>();
+
+                foreach (string folder in Directory.GetDirectories(rootPath).OrderBy(x => x))
+                {
+                    string sizeText;
+
+                    try
+                    {
+                        long size = ImapiBurnService.GetDirectorySize(folder);
+                        sizeText = FormatBytes(size);
+                    }
+                    catch
+                    {
+                        sizeText = "ошибка";
+                    }
+
+                    list.Add(new BurnJob
+                    {
+                        FolderPath = folder,
+                        Status = BurnJobStatus.Waiting,
+                        AssignedDrive = string.Empty,
+                        ErrorMessage = string.Empty,
+                        Selected = true,
+                        SizeText = sizeText
+                    });
+                }
+
+                return list;
+            });
+
+            State.SetJobs(jobs);
+            State.AddLog("Загружено папок: " + jobs.Count);
+
+            var settings = SettingsStore.Load();
+            settings.BurnerRootFolder = _rootFolder;
+            SettingsStore.Save(settings);
+        }
+        catch (Exception ex)
+        {
+            _alertError = "Не удалось прочитать выбранную папку:" + Environment.NewLine + ex.Message;
+            return;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task DetectDrivesAsync()
+    {
+        ClearAlerts();
+        _busy = true;
+
+        try
+        {
+            List<DriveInfoModel>? drives = null;
+
+            // Детект — COM-операция IMAPI2, выполняем в STA-потоке.
+            await StaComRunner.RunAsync(() =>
+            {
+                drives = ImapiDriveDetector.GetRecorders();
+            });
+
+            drives ??= new List<DriveInfoModel>();
+
+            State.SetDrives(drives);
+            State.AddLog("Найдено приводов: " + drives.Count);
+
+            if (drives.Count == 0)
+            {
+                _alertInfo = "Пишущие приводы не найдены.";
+            }
+        }
+        catch (Exception ex)
+        {
+            _alertError = "Ошибка поиска приводов:" + Environment.NewLine + ex.Message;
+            State.AddLog("Ошибка поиска приводов: " + ex.Message);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task StartAsync()
+    {
+        ClearAlerts();
+
+        // Валидация выбранных строк: существование папок — как в десктопе.
+        var selectedJobs = new List<BurnJob>();
+
+        foreach (BurnJob job in State.GetJobsSnapshot().Where(j => j.Selected))
+        {
+            if (!Directory.Exists(job.FolderPath))
+            {
+                job.Status = BurnJobStatus.Error;
+                job.ErrorMessage = "Папка не найдена";
+                continue;
+            }
+
+            job.Status = BurnJobStatus.Waiting;
+            job.AssignedDrive = string.Empty;
+            job.ErrorMessage = string.Empty;
+            selectedJobs.Add(job);
+        }
+
+        Refresh();
+        StateHasChanged();
+
+        if (selectedJobs.Count == 0)
+        {
+            _alertWarning = "Не выбраны папки для записи.";
+            return;
+        }
+
+        List<DriveInfoModel> selectedDrives = State.Drives.Where(d => d.Selected).ToList();
+
+        if (selectedDrives.Count == 0)
+        {
+            _alertWarning = "Не выбраны приводы.";
+            return;
+        }
+
+        bool confirm = await JS.InvokeAsync<bool>("confirm",
+            "Будет запущена запись." + Environment.NewLine +
+            "Папок: " + selectedJobs.Count + Environment.NewLine +
+            "Приводов: " + selectedDrives.Count + Environment.NewLine + Environment.NewLine +
+            "Продолжить?");
+
+        if (!confirm)
+            return;
+
+        if (!await CheckFolderSizesAsync(selectedJobs))
+            return;
+
+        State.AddLog("Запись запущена. Приводов: " + selectedDrives.Count + ", заданий: " + selectedJobs.Count);
+        State.StartBurning(selectedJobs, selectedDrives);
+    }
+
+    private void Stop()
+    {
+        State.Stop();
+    }
+
+    private async Task<bool> CheckFolderSizesAsync(List<BurnJob> selectedJobs)
+    {
+        // MVP-проверка под обычный DVD-R 4.7 GB.
+        // Фактическая полезная емкость обычно около 4.3 GiB.
+        // Если будете писать BD-R, этот лимит надо сделать настройкой.
+        const long dvdLimit = 4300L * 1024L * 1024L;
+
+        List<string> oversized = await Task.Run(() =>
+        {
+            var list = new List<string>();
+
+            foreach (BurnJob job in selectedJobs)
+            {
+                try
+                {
+                    long size = ImapiBurnService.GetDirectorySize(job.FolderPath);
+
+                    if (size > dvdLimit)
+                    {
+                        list.Add(job.FolderName + " — " + FormatBytes(size));
+                    }
+                }
+                catch
+                {
+                    list.Add(job.FolderName + " — не удалось определить размер");
+                }
+            }
+
+            return list;
+        });
+
+        if (oversized.Count == 0)
+            return true;
+
+        string message =
+            "Некоторые папки больше типовой емкости DVD-R 4.7 GB:" +
+            Environment.NewLine + Environment.NewLine +
+            string.Join(Environment.NewLine, oversized.Take(20).ToArray());
+
+        if (oversized.Count > 20)
+            message += Environment.NewLine + "... и еще: " + (oversized.Count - 20);
+
+        message += Environment.NewLine + Environment.NewLine + "Продолжить?";
+
+        return await JS.InvokeAsync<bool>("confirm", message);
+    }
+
+    private void ClearAlerts()
+    {
+        _alertError = null;
+        _alertInfo = null;
+        _alertWarning = null;
+    }
+
+    private static string? RowClass(BurnJob job) => job.Status switch
+    {
+        BurnJobStatus.Burning => "sb-row-warn",
+        BurnJobStatus.Done => "sb-row-ok",
+        BurnJobStatus.Error => "sb-row-err",
+        _ => null
+    };
+
+    private static string StatusText(BurnJob job) => job.Status switch
+    {
+        BurnJobStatus.Waiting => job.Queued ? "В очереди" : "Ожидает",
+        BurnJobStatus.Burning => "Запись",
+        BurnJobStatus.Done => "Готово",
+        BurnJobStatus.Error => "Ошибка",
+        _ => job.Status.ToString()
+    };
+
+    private static string FormatBytes(long bytes)
+    {
+        double value = bytes;
+
+        string[] suffixes = { "B", "KB", "MB", "GB", "TB" };
+
+        int suffixIndex = 0;
+
+        while (value >= 1024 && suffixIndex < suffixes.Length - 1)
+        {
+            value /= 1024;
+            suffixIndex++;
+        }
+
+        return value.ToString("0.##") + " " + suffixes[suffixIndex];
+    }
+
+    public void Dispose()
+    {
+        State.Changed -= OnStateChanged;
+    }
+}

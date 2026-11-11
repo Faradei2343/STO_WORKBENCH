@@ -1,0 +1,12 @@
+@page "/"
+
+<div class="sb-welcome">
+    <h1>Добро пожаловать</h1>
+    <p>Выберите инструмент в меню слева, чтобы начать работу.</p>
+    <p class="sb-muted" style="margin-top: 18px;">Версия: @AppVersion</p>
+</div>
+
+@code {
+    private string AppVersion { get; } =
+        System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.0.0";
+}

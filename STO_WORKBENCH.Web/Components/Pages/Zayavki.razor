@@ -1,0 +1,410 @@
+@page "/zayavki"
+@using System.IO.Compression
+@using STO_WORKBENCH.Web.Services.Zayavki
+@inject DownloadRegistry Downloads
+@inject WebSettingsStore SettingsStore
+
+<div class="sb-page-title">Генерация и отправка заявок МФ</div>
+<div class="sb-page-subtitle">Мурманский филиал</div>
+
+<div class="sb-tabs">
+    <button class="sb-tab @(_tab == "gen" ? "active" : null)" @onclick='() => _tab = "gen"'>📄 Генерация</button>
+    <button class="sb-tab @(_tab == "send" ? "active" : null)" @onclick='() => _tab = "send"'>✉ Отправка</button>
+</div>
+
+@if (_tab == "gen")
+{
+    <div class="sb-card">
+        <h3>Генерация файлов заявок из Excel-шаблона</h3>
+
+        <div class="sb-field">
+            <label>Файл Excel-шаблона</label>
+            <InputFile OnChange="OnTemplateChanged" accept=".xlsx,.xls,.xlsm" class="sb-input" disabled="@_genRunning" />
+            @if (!string.IsNullOrEmpty(_templateName))
+            {
+                <div class="sb-hint">Выбран: @_templateName</div>
+            }
+            <div class="sb-hint">Шаблон должен содержать лист «Заявка №» с ячейкой «МФ…». Требуется установленный Microsoft Excel на сервере.</div>
+        </div>
+
+        <div class="sb-grid sb-cols-2">
+            <div class="sb-field">
+                <label>С номера (МФ)</label>
+                <input type="number" class="sb-input" min="1" @bind="_genStart" disabled="@_genRunning" />
+            </div>
+            <div class="sb-field">
+                <label>По номер (МФ)</label>
+                <input type="number" class="sb-input" min="1" @bind="_genEnd" disabled="@_genRunning" />
+            </div>
+        </div>
+
+        <div class="sb-toolbar">
+            <button class="sb-btn sb-btn-primary" @onclick="GenerateAsync" disabled="@_genRunning">▶ Создать файлы</button>
+            <button class="sb-btn sb-btn-danger" @onclick="CancelGenerate" disabled="@(!_genRunning || _genCancelRequested)">✕ Отмена</button>
+        </div>
+
+        @if (_genTotal > 0)
+        {
+            <div class="sb-progress"><div style="width: @GenProgressPercent%"></div></div>
+            <div class="sb-hint">@_genStep / @_genTotal</div>
+        }
+
+        @if (_genAlert is not null)
+        {
+            <div class="sb-alert @AlertClass(_genAlert.Value.kind)">
+                @_genAlert.Value.message
+                @if (_genAlert.Value.kind == AlertKind.Success && _genDownloadId is not null)
+                {
+                    <div><a href="/download/@_genDownloadId">Скачать архив заявок (ZIP)</a></div>
+                }
+            </div>
+        }
+
+        <LogPanel Lines="@_genLog" />
+    </div>
+}
+else
+{
+    <div class="sb-card">
+        <h3>Отправка готовых заявок по e-mail через Outlook</h3>
+
+        <div class="sb-field">
+            <label>Папка с готовыми файлами (PDF и XLSX)</label>
+            <input type="text" class="sb-input" @bind="_sendDir" disabled="@_sendRunning" placeholder="C:\Заявки" />
+        </div>
+
+        <div class="sb-grid sb-cols-2">
+            <div class="sb-field">
+                <label>С номера (МФ)</label>
+                <input type="number" class="sb-input" min="1" @bind="_sendStart" disabled="@_sendRunning" />
+            </div>
+            <div class="sb-field">
+                <label>По номер (МФ)</label>
+                <input type="number" class="sb-input" min="1" @bind="_sendEnd" disabled="@_sendRunning" />
+            </div>
+        </div>
+
+        <div class="sb-field">
+            <label>Кому (To)</label>
+            <input type="text" class="sb-input" @bind="_sendTo" disabled="@_sendRunning" placeholder="email основного получателя" />
+        </div>
+        <div class="sb-field">
+            <label>Копия (CC)</label>
+            <input type="text" class="sb-input" @bind="_sendCc" disabled="@_sendRunning" placeholder="необязательно" />
+        </div>
+
+        <div class="sb-toolbar">
+            <button class="sb-btn sb-btn-primary" @onclick="SendAsync" disabled="@_sendRunning">✉ Отправить письма</button>
+            <button class="sb-btn sb-btn-danger" @onclick="CancelSend" disabled="@(!_sendRunning || _sendCancelRequested)">✕ Отмена</button>
+        </div>
+        <div class="sb-hint">Письма отправляются из профиля Outlook, настроенного на сервере.</div>
+
+        @if (_sendTotal > 0)
+        {
+            <div class="sb-progress"><div style="width: @SendProgressPercent%"></div></div>
+            <div class="sb-hint">@_sendStep / @_sendTotal</div>
+        }
+
+        @if (_sendAlert is not null)
+        {
+            <div class="sb-alert @AlertClass(_sendAlert.Value.kind)">@_sendAlert.Value.message</div>
+        }
+
+        <LogPanel Lines="@_sendLog" />
+    </div>
+}
+
+@code {
+    private enum AlertKind { Success, Warning, Error }
+
+    private string _tab = "gen";
+
+    // ── Вкладка «Генерация» ──
+    private string? _templateTempPath;
+    private string _templateName = string.Empty;
+    private string? _tempDir;
+    private int _genStart = 1;
+    private int _genEnd = 1;
+    private bool _genRunning;
+    private bool _genCancelRequested;
+    private CancellationTokenSource? _genCts;
+    private int _genStep;
+    private int _genTotal;
+    private List<string> _genLog = new();
+    private (AlertKind kind, string message)? _genAlert;
+    private string? _genDownloadId;
+
+    // ── Вкладка «Отправка» ──
+    private string _sendDir = string.Empty;
+    private int _sendStart = 1;
+    private int _sendEnd = 1;
+    private string _sendTo = string.Empty;
+    private string _sendCc = string.Empty;
+    private bool _sendRunning;
+    private bool _sendCancelRequested;
+    private CancellationTokenSource? _sendCts;
+    private int _sendStep;
+    private int _sendTotal;
+    private List<string> _sendLog = new();
+    private (AlertKind kind, string message)? _sendAlert;
+
+    private int GenProgressPercent => _genTotal > 0 ? Math.Min(100, _genStep * 100 / _genTotal) : 0;
+    private int SendProgressPercent => _sendTotal > 0 ? Math.Min(100, _sendStep * 100 / _sendTotal) : 0;
+
+    protected override void OnInitialized()
+    {
+        var settings = SettingsStore.Load();
+        _sendDir = settings.ZayavkiFilesDir;
+        _sendTo = settings.ZayavkiRecipientEmail;
+        _sendCc = settings.ZayavkiCcEmail;
+    }
+
+    // Загруженный шаблон копируется во временную папку сервера —
+    // рядом с ним сервис и будет складывать созданные PDF/XLSX.
+    private async Task OnTemplateChanged(InputFileChangeEventArgs e)
+    {
+        _genAlert = null;
+        try
+        {
+            CleanupTempDir();
+            _tempDir = Path.Combine(Path.GetTempPath(), $"zayavki_{Guid.NewGuid():N}");
+            Directory.CreateDirectory(_tempDir);
+
+            var ext = Path.GetExtension(e.File.Name);
+            if (string.IsNullOrEmpty(ext)) ext = ".xlsx";
+            _templateTempPath = Path.Combine(_tempDir, $"template{ext.ToLowerInvariant()}");
+
+            using var src = e.File.OpenReadStream(100 * 1024 * 1024);
+            using var dst = File.Create(_templateTempPath);
+            await src.CopyToAsync(dst);
+
+            _templateName = e.File.Name;
+        }
+        catch (Exception ex)
+        {
+            _genAlert = (AlertKind.Error, $"Ошибка загрузки файла: {ex.Message}");
+        }
+    }
+
+    private async Task GenerateAsync()
+    {
+        _genAlert = null;
+        _genDownloadId = null;
+
+        if (string.IsNullOrEmpty(_templateTempPath) || !File.Exists(_templateTempPath))
+        {
+            _genAlert = (AlertKind.Warning, "Укажите файл Excel-шаблона.");
+            return;
+        }
+        if (_genStart <= 0)
+        {
+            _genAlert = (AlertKind.Warning, "Начальный номер должен быть положительным числом.");
+            return;
+        }
+        if (_genEnd < _genStart)
+        {
+            _genAlert = (AlertKind.Warning, "Конечный номер должен быть >= начального.");
+            return;
+        }
+
+        string templatePath = _templateTempPath;
+        string tempDir = _tempDir!;
+        int total = _genEnd - _genStart + 1;
+
+        _genTotal = total;
+        _genStep = 0;
+        _genLog = new List<string>();
+        _genRunning = true;
+        _genCancelRequested = false;
+        _genCts = new CancellationTokenSource();
+
+        var service = new ExcelService();
+        service.OnProgress += (step, msg) =>
+        {
+            _genStep = Math.Min(step, total);
+            _genLog.Add(LogLine(msg));
+            _ = InvokeAsync(StateHasChanged);
+        };
+        service.OnCompleted += (success, msg) =>
+        {
+            _genLog.Add(LogLine(msg));
+            _genAlert = success ? (AlertKind.Success, msg)
+                : msg.Contains("Ошибка") ? (AlertKind.Error, msg)
+                : (AlertKind.Warning, msg);
+            _ = InvokeAsync(StateHasChanged);
+        };
+
+        var opts = new GenerationOptions { ExcelFilePath = templatePath, StartCount = _genStart, EndCount = _genEnd };
+
+        try
+        {
+            await StaComRunner.RunAsync(() => service.Generate(opts, _genCts.Token), _genCts.Token);
+
+            if (_genAlert?.kind == AlertKind.Success)
+            {
+                // Упаковываем созданные PDF+XLSX в ZIP; временные файлы удаляем —
+                // байты уже хранятся в DownloadRegistry.
+                var files = Directory.GetFiles(tempDir)
+                    .Where(f => !string.Equals(f, templatePath, StringComparison.OrdinalIgnoreCase)
+                        && (f.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase)
+                            || f.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase)))
+                    .ToArray();
+
+                byte[] zipBytes = BuildZip(files);
+                _genDownloadId = Downloads.Add(zipBytes, $"Заявки МФ {_genStart}-{_genEnd}.zip", "application/zip");
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Отмена уже отражена в OnCompleted сервиса.
+        }
+        catch (Exception ex)
+        {
+            _genAlert = (AlertKind.Error, $"Ошибка: {ex.Message}");
+        }
+        finally
+        {
+            if (_genAlert?.kind == AlertKind.Success)
+                CleanupTempDir();
+            _genRunning = false;
+            _genCts?.Dispose();
+            _genCts = null;
+        }
+    }
+
+    private void CancelGenerate()
+    {
+        _genCancelRequested = true;
+        _genCts?.Cancel();
+    }
+
+    private async Task SendAsync()
+    {
+        _sendAlert = null;
+
+        if (string.IsNullOrWhiteSpace(_sendDir) || !Directory.Exists(_sendDir))
+        {
+            _sendAlert = (AlertKind.Warning, "Укажите существующую папку с файлами.");
+            return;
+        }
+        if (_sendStart <= 0)
+        {
+            _sendAlert = (AlertKind.Warning, "Начальный номер должен быть положительным числом.");
+            return;
+        }
+        if (_sendEnd < _sendStart)
+        {
+            _sendAlert = (AlertKind.Warning, "Конечный номер должен быть >= начального.");
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(_sendTo))
+        {
+            _sendAlert = (AlertKind.Warning, "Укажите email основного получателя.");
+            return;
+        }
+
+        // Запоминаем папку и адресатов между запусками (как Properties.Settings в WinForms).
+        var settings = SettingsStore.Load();
+        settings.ZayavkiFilesDir = _sendDir.Trim();
+        settings.ZayavkiRecipientEmail = _sendTo.Trim();
+        settings.ZayavkiCcEmail = _sendCc.Trim();
+        SettingsStore.Save(settings);
+
+        int total = _sendEnd - _sendStart + 1;
+        _sendTotal = total;
+        _sendStep = 0;
+        _sendLog = new List<string>();
+        _sendRunning = true;
+        _sendCancelRequested = false;
+        _sendCts = new CancellationTokenSource();
+
+        var service = new OutlookService();
+        service.OnProgress += (step, msg) =>
+        {
+            _sendStep = Math.Min(step, total);
+            _sendLog.Add(LogLine(msg));
+            _ = InvokeAsync(StateHasChanged);
+        };
+        service.OnCompleted += (success, msg) =>
+        {
+            _sendLog.Add(LogLine(msg));
+            _sendAlert = success ? (AlertKind.Success, msg)
+                : msg.Contains("Ошибка") ? (AlertKind.Error, msg)
+                : (AlertKind.Warning, msg);
+            _ = InvokeAsync(StateHasChanged);
+        };
+
+        var opts = new SendOptions
+        {
+            FilesDir = _sendDir.Trim(),
+            StartCount = _sendStart,
+            EndCount = _sendEnd,
+            RecipientEmail = _sendTo.Trim(),
+            CcEmail = _sendCc.Trim()
+        };
+
+        try
+        {
+            await StaComRunner.RunAsync(() => service.Send(opts, _sendCts.Token), _sendCts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            // Отмена уже отражена в OnCompleted сервиса.
+        }
+        catch (Exception ex)
+        {
+            _sendAlert = (AlertKind.Error, $"Ошибка: {ex.Message}");
+        }
+        finally
+        {
+            _sendRunning = false;
+            _sendCts?.Dispose();
+            _sendCts = null;
+        }
+    }
+
+    private void CancelSend()
+    {
+        _sendCancelRequested = true;
+        _sendCts?.Cancel();
+    }
+
+    private static byte[] BuildZip(string[] files)
+    {
+        using var ms = new MemoryStream();
+        using (var archive = new ZipArchive(ms, ZipArchiveMode.Create, leaveOpen: true))
+        {
+            foreach (var file in files)
+            {
+                var entry = archive.CreateEntry(Path.GetFileName(file), CompressionLevel.Optimal);
+                using var entryStream = entry.Open();
+                using var fileStream = File.OpenRead(file);
+                fileStream.CopyTo(entryStream);
+            }
+        }
+        return ms.ToArray();
+    }
+
+    private void CleanupTempDir()
+    {
+        try
+        {
+            if (_tempDir is not null && Directory.Exists(_tempDir))
+                Directory.Delete(_tempDir, recursive: true);
+        }
+        catch { }
+        _tempDir = null;
+        _templateTempPath = null;
+        _templateName = string.Empty;
+    }
+
+    private static string LogLine(string message) =>
+        $"[{DateTime.Now:HH:mm:ss}] {message}";
+
+    private static string AlertClass(AlertKind kind) => kind switch
+    {
+        AlertKind.Success => "sb-alert-success",
+        AlertKind.Warning => "sb-alert-warning",
+        _ => "sb-alert-error"
+    };
+}

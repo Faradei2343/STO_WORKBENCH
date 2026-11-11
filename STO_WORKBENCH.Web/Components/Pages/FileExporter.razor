@@ -1,0 +1,466 @@
+@page "/file-exporter"
+@using STO_WORKBENCH.Web.Services.Exporting
+@inject WebSettingsStore SettingsStore
+@inject DownloadRegistry Downloads
+@inject IJSRuntime JS
+
+<h1 class="sb-page-title">📁 Экспорт имён файлов и сортировка</h1>
+<p class="sb-page-subtitle">Поиск файлов по маскам, шаблоны имён, выгрузка списка в Excel и раскладка файлов по папкам.</p>
+
+@if (_errorMessage != null)
+{
+    <div class="sb-alert sb-alert-error">@_errorMessage</div>
+}
+
+@if (_excelDownloadId != null)
+{
+    <div class="sb-alert sb-alert-success">
+        Excel-файл успешно создан. <a href="/download/@_excelDownloadId">Скачать файл</a>
+    </div>
+}
+
+@if (_successMessage != null)
+{
+    <div class="sb-alert sb-alert-success">@_successMessage</div>
+}
+
+<div class="sb-grid sb-cols-2">
+
+    <div class="sb-card">
+        <h3>Основные настройки</h3>
+
+        <div class="sb-field">
+            <label>Папка с файлами</label>
+            <input class="sb-input" @bind="_folder" @bind:after="SaveSettings" placeholder="C:\Документы" />
+            @if (!string.IsNullOrWhiteSpace(_folder) && !Directory.Exists(_folder))
+            {
+                <div class="sb-hint">Папка не существует</div>
+            }
+        </div>
+
+        <div class="sb-field">
+            <label>Фильтр (несколько масок через ;)</label>
+            <input class="sb-input" @bind="_searchPattern" placeholder="*.*" />
+        </div>
+
+        <div class="sb-field">
+            <label>Разделитель частей имени (пусто — одна часть)</label>
+            <input class="sb-input" @bind="_separator" placeholder="_" />
+        </div>
+
+        <label class="sb-checkbox">
+            <input type="checkbox" @bind="_includeSubfolders" />
+            <span>Включая подпапки</span>
+        </label>
+
+        <label class="sb-checkbox">
+            <input type="checkbox" @bind="_includeOriginalFileName" />
+            <span>Исходное имя файла в Excel</span>
+        </label>
+
+        <div class="sb-field">
+            <label>Шаблон результата</label>
+            <input class="sb-input" @bind="_template" placeholder="{name}" />
+            <div class="sb-hint">
+                Плейсхолдеры: {file} {name} {ext} {N} {N:start:length} {name:start:length} {match:regex[:group]}
+            </div>
+        </div>
+    </div>
+
+    <div>
+        <div class="sb-card">
+            <h3>Excel и дубли</h3>
+
+            <label class="sb-checkbox">
+                <input type="checkbox" @bind="_removeDuplicates" />
+                <span>Удалять дубли</span>
+            </label>
+
+            <label class="sb-checkbox">
+                <input type="checkbox" @bind="_ignoreCaseDuplicates" />
+                <span>Дубли без учёта регистра</span>
+            </label>
+
+            <div class="sb-toolbar">
+                <button class="sb-btn sb-btn-secondary" disabled="@_isBusy" @onclick="PreviewAsync">Предпросмотр</button>
+                <button class="sb-btn sb-btn-primary" disabled="@_isBusy" @onclick="ExportExcelAsync">Экспорт в Excel</button>
+            </div>
+        </div>
+
+        <div class="sb-card">
+            <h3>Сортировка файлов по папкам</h3>
+
+            <div class="sb-field">
+                <label>Корневая папка назначения</label>
+                <input class="sb-input" @bind="_outputRoot" @bind:after="SaveSettings" placeholder="C:\Сортировка" />
+            </div>
+
+            <label class="sb-checkbox">
+                <input type="checkbox" @bind="_copyFiles" />
+                <span>Копировать, не перемещать файлы</span>
+            </label>
+
+            <div class="sb-toolbar">
+                <button class="sb-btn sb-btn-primary" disabled="@_isBusy" @onclick="OrganizeFilesAsync">Разложить файлы</button>
+            </div>
+        </div>
+
+        <div class="sb-card">
+            <h3>Группировка файлов</h3>
+
+            <label class="sb-checkbox">
+                <input type="checkbox" @bind="_enableGrouping" />
+                <span>Включить группировку</span>
+            </label>
+
+            <div class="sb-field">
+                <label>Шаблон ключа группы</label>
+                <input class="sb-input" @bind="_groupKeyTemplate" placeholder="{match:№\s*(\d+):1}" />
+            </div>
+
+            <div class="sb-field">
+                <label>Шаблон имени папки группы</label>
+                <input class="sb-input" @bind="_groupFolderTemplate" placeholder="{group}" />
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="sb-card">
+    <h3>Правила сортировки по папкам</h3>
+
+    <div class="sb-table-wrap">
+        <table class="sb-table">
+            <thead>
+                <tr>
+                    <th style="width: 90px;">Включено</th>
+                    <th>Папка</th>
+                    <th>Regex-шаблоны через ;</th>
+                    <th style="width: 140px;">Без учёта регистра</th>
+                    <th style="width: 60px;"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in _rules)
+                {
+                    <tr @key(row)>
+                        <td style="text-align: center;">
+                            <input type="checkbox" @bind="row.Enabled" />
+                        </td>
+                        <td>
+                            <input class="sb-input" @bind="row.Folder" />
+                        </td>
+                        <td>
+                            <input class="sb-input" @bind="row.Patterns" />
+                        </td>
+                        <td style="text-align: center;">
+                            <input type="checkbox" @bind="row.IgnoreCase" />
+                        </td>
+                        <td style="text-align: center;">
+                            <button class="sb-btn sb-btn-danger" @onclick="() => RemoveRule(row)" title="Удалить строку">✕</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="sb-toolbar">
+        <button class="sb-btn sb-btn-secondary" @onclick="AddRule">+ Добавить правило</button>
+    </div>
+</div>
+
+<div class="sb-card">
+    <h3>Предпросмотр</h3>
+
+    @if (_items == null)
+    {
+        <p class="sb-muted">Нажмите «Предпросмотр» или «Экспорт в Excel», чтобы увидеть результат.</p>
+    }
+    else if (_items.Count == 0)
+    {
+        <p class="sb-muted">Файлы не найдены.</p>
+    }
+    else
+    {
+        <div class="sb-statusbar">
+            <span class="sb-badge sb-badge-info">Файлов: @_items.Count</span>
+        </div>
+        <div class="sb-table-wrap">
+            <table class="sb-table">
+                <thead>
+                    <tr>
+                        <th style="width: 60px;">№</th>
+                        <th>Исходное имя</th>
+                        <th>Результат</th>
+                        <th>Группа</th>
+                        <th>Папка</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in _items)
+                    {
+                        <tr>
+                            <td>@item.Number</td>
+                            <td>@item.SourceFileName</td>
+                            <td>@item.ResultName</td>
+                            <td>@item.GroupKey</td>
+                            <td>@item.TargetFolder</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+<div class="sb-card">
+    <h3>Журнал операций</h3>
+    <LogPanel Lines="@_log" />
+</div>
+
+@code {
+    private readonly FileNameExporter _exporter = new();
+
+    private WebSettings _settings = new();
+    private readonly List<string> _log = new();
+    private List<FileNameExportItem>? _items;
+
+    private readonly List<SortRuleRow> _rules = new()
+    {
+        new SortRuleRow { Enabled = true, Folder = "Новые счет-фактуры", Patterns = @"\bсф\b;сч\.?\s*ф\.?;счф", IgnoreCase = true },
+        new SortRuleRow { Enabled = true, Folder = "Товарные накладные", Patterns = @"\bтн\b;тов\.?\s*накл\.?", IgnoreCase = true }
+    };
+
+    private string _folder = string.Empty;
+    private string _searchPattern = "*.*";
+    private string _template = "{name}";
+    private string _separator = "_";
+    private bool _includeSubfolders;
+    private bool _includeOriginalFileName = true;
+
+    private bool _removeDuplicates;
+    private bool _ignoreCaseDuplicates = true;
+
+    private string _outputRoot = string.Empty;
+    private bool _copyFiles = true;
+
+    private bool _enableGrouping;
+    private string _groupKeyTemplate = "{match:№\\s*(\\d+):1}";
+    private string _groupFolderTemplate = "{group}";
+
+    private bool _isBusy;
+    private string? _errorMessage;
+    private string? _successMessage;
+    private string? _excelDownloadId;
+
+    protected override void OnInitialized()
+    {
+        _settings = SettingsStore.Load();
+        _folder = _settings.ExporterFolder;
+        _outputRoot = _settings.ExporterOutputRoot;
+    }
+
+    private void SaveSettings()
+    {
+        _settings.ExporterFolder = _folder.Trim();
+        _settings.ExporterOutputRoot = _outputRoot.Trim();
+        SettingsStore.Save(_settings);
+    }
+
+    private void AddRule()
+    {
+        _rules.Add(new SortRuleRow());
+    }
+
+    private void RemoveRule(SortRuleRow row)
+    {
+        _rules.Remove(row);
+    }
+
+    private async Task PreviewAsync()
+    {
+        ResetAlerts();
+        _isBusy = true;
+
+        try
+        {
+            FileNameExporterOptions options = CreateOptions();
+            _items = await Task.Run(() => _exporter.GetFileNames(options));
+        }
+        catch (Exception ex)
+        {
+            _items = null;
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _isBusy = false;
+        }
+    }
+
+    private async Task ExportExcelAsync()
+    {
+        ResetAlerts();
+        _isBusy = true;
+
+        string? tempPath = null;
+
+        try
+        {
+            FileNameExporterOptions options = CreateOptions();
+            tempPath = Path.Combine(Path.GetTempPath(), $"FileNameExport_{Guid.NewGuid():N}.xlsx");
+
+            await Task.Run(() => _exporter.ExportToExcel(options, tempPath));
+
+            byte[] bytes = await File.ReadAllBytesAsync(tempPath);
+
+            _excelDownloadId = Downloads.Add(
+                bytes,
+                "Список файлов.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            if (tempPath != null && File.Exists(tempPath))
+                File.Delete(tempPath);
+
+            _isBusy = false;
+        }
+    }
+
+    private async Task OrganizeFilesAsync()
+    {
+        ResetAlerts();
+
+        string confirmText = _copyFiles
+            ? "Файлы будут скопированы по папкам. Продолжить?"
+            : "Файлы будут перемещены по папкам. Продолжить?";
+
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", confirmText);
+
+        if (!confirmed)
+            return;
+
+        _isBusy = true;
+
+        try
+        {
+            FileNameExporterOptions options = CreateOptions();
+            options.OrganizeFiles = true;
+
+            await Task.Run(async () =>
+            {
+                List<FileNameExportItem> items = _exporter.GetFileNames(options);
+                await LogAsync($"Найдено файлов: {items.Count}");
+
+                _exporter.OrganizeFiles(options);
+
+                await LogAsync($"Обработано файлов: {items.Count}");
+            });
+
+            _successMessage = "Файлы успешно обработаны.";
+            await LogAsync("** Файлы успешно обработаны.");
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+            await LogAsync($"!! Ошибка: {ex.Message}");
+        }
+        finally
+        {
+            _isBusy = false;
+        }
+    }
+
+    private FileNameExporterOptions CreateOptions()
+    {
+        return new FileNameExporterOptions
+        {
+            FolderPath = _folder.Trim(),
+            SearchPattern = _searchPattern.Trim(),
+            Template = _template.Trim(),
+            Separator = _separator,
+
+            IncludeSubfolders = _includeSubfolders,
+            IncludeOriginalFileName = _includeOriginalFileName,
+
+            RemoveDuplicates = _removeDuplicates,
+            IgnoreCaseDuplicates = _ignoreCaseDuplicates,
+
+            OrganizeFiles = false,
+            CopyFiles = _copyFiles,
+            OutputRootFolder = _outputRoot.Trim(),
+
+            SortRules = ReadSortRules(),
+
+            EnableGrouping = _enableGrouping,
+            GroupKeyTemplate = _groupKeyTemplate.Trim(),
+            GroupFolderTemplate = _groupFolderTemplate.Trim()
+        };
+    }
+
+    private List<FileSortRule> ReadSortRules()
+    {
+        List<FileSortRule> rules = new();
+
+        foreach (SortRuleRow row in _rules)
+        {
+            string folder = row.Folder;
+            string patternsText = row.Patterns;
+
+            if (string.IsNullOrWhiteSpace(folder))
+                continue;
+
+            if (string.IsNullOrWhiteSpace(patternsText))
+                continue;
+
+            List<string> patterns = patternsText
+                .Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(x => x.Trim())
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .ToList();
+
+            if (patterns.Count == 0)
+                continue;
+
+            rules.Add(new FileSortRule
+            {
+                Enabled = row.Enabled,
+                TargetFolderName = folder,
+                RegexPatterns = patterns,
+                IgnoreCase = row.IgnoreCase
+            });
+        }
+
+        return rules;
+    }
+
+    private void ResetAlerts()
+    {
+        _errorMessage = null;
+        _successMessage = null;
+        _excelDownloadId = null;
+    }
+
+    private async Task LogAsync(string line)
+    {
+        await InvokeAsync(() =>
+        {
+            _log.Add(line);
+            StateHasChanged();
+        });
+    }
+
+    private sealed class SortRuleRow
+    {
+        public bool Enabled { get; set; } = true;
+        public string Folder { get; set; } = string.Empty;
+        public string Patterns { get; set; } = string.Empty;
+        public bool IgnoreCase { get; set; } = true;
+    }
+}

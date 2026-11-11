@@ -1,19 +1,30 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Windows.Forms;
 using STO_WORKBENCH;
 
 namespace STO_WORKBENCH.SLRegistry
 {
+    // Форма модуля построения служебных реестров (SLRegistry).
+    // Пользователь выбирает папку с исходными файлами det_*.xls, вводит отчётный период
+    // и название проекта, после чего запускается построение реестров передачи СЛ
+    // через класс RegistryBuilder. Ход работы выводится в лог на той же форме.
     public partial class FormSLRegistry : Form
     {
+        // Путь к папке с исходными файлами det_*.xls, выбранной через диалог обзора
         private string selectedFolder;
+
+        // Конструктор формы: инициализация компонентов дизайнера.
+        // Кнопка построения изначально неактивна — сначала нужно выбрать папку с файлами.
         public FormSLRegistry()
         {
             InitializeComponent();
             buttonBuildAll.Enabled = false;
         }
 
+        // Обработчик кнопки "Обзор..." — выбор папки с исходными det-файлами.
+        // При подтверждении выбора запоминает путь, показывает его в текстовом поле,
+        // активирует кнопку построения реестров и очищает лог для нового запуска.
         private void buttonPath_Click(object sender, EventArgs e)
         {
             using (FolderBrowserDialog dialog = new FolderBrowserDialog())

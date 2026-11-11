@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -6,10 +6,19 @@ using System.Windows.Forms;
 
 namespace STO_WORKBENCH.ZayavkoDrochitel3000
 {
+    // Главная форма модуля «Заявки МФ» (ZayavkoDrochitel3000).
+    // Двухвкладочный интерфейс: «Генерация» создаёт PDF/XLSX заявок из Excel-шаблона,
+    // «Отправка» рассылает готовые файлы по e-mail через Outlook.
+    // Тяжёлые операции (Excel/Outlook Interop) выполняются в фоновых задачах Task.Run,
+    // чтобы не блокировать UI; результаты возвращаются в UI-поток через Control.Invoke.
     public partial class FormZayavkodrochitel3000 : Form
     {
+        // Источник токена отмены для текущей фоновой операции (генерация или отправка).
+        // Создаётся при старте операции, отменяется кнопкой «Отмена».
         private CancellationTokenSource _cts;
 
+        // Конструктор формы: разметка и контролы создаются в InitializeComponent()
+        // (автогенерируемая часть в FormZayavkodrochitel3000.Designer.cs).
         public FormZayavkodrochitel3000()
         {
             InitializeComponent();
@@ -18,6 +27,8 @@ namespace STO_WORKBENCH.ZayavkoDrochitel3000
 
 // ===================== ВКЛАДКА "ГЕНЕРАЦИЯ" =====================
 
+        // Обработчик кнопки «Обзор...» рядом с полем пути к Excel-шаблону.
+        // Открывает стандартный диалог выбора файла; при подтверждении пишет путь в txtExcelPath.
         private void btnBrowseExcel_Click(object sender, EventArgs e)
         {
             using (var dlg = new OpenFileDialog())
@@ -29,6 +40,11 @@ namespace STO_WORKBENCH.ZayavkoDrochitel3000
             }
         }
 
+        // Обработчик кнопки «Создать файлы» (вкладка «Генерация»).
+        // Валидирует ввод, готовит прогресс и лог, затем запускает ExcelService.Generate
+        // в фоновом потоке. Обработчики событий сервиса маршалятся в UI-поток через this.Invoke,
+        // так как сервис дёргает их из рабочего потока (прямое обращение к контролам
+        // из чужого потока упало бы с InvalidOperationException).
         private async void btnGenerate_Click(object sender, EventArgs e)
         {
             if (!ValidateGenerationInput(out var opts)) return;
@@ -41,6 +57,7 @@ namespace STO_WORKBENCH.ZayavkoDrochitel3000
             _cts = new CancellationTokenSource();
             var service = new ExcelService();
 
+            // Прогресс: двигаем ProgressBar, обновляем счётчик «N / total» и пишем сообщение в лог.
             service.OnProgress += (step, msg) => this.Invoke((Action)(() =>
             {
                 pgGenerate.Value = Math.Min(step, total);
@@ -48,6 +65,8 @@ namespace STO_WORKBENCH.ZayavkoDrochitel3000
                 AppendLog(txtGenLog, msg);
             }));
 
+            // Завершение: финальная запись в лог, разблокировка UI, доводка прогресса до 100%
+            // и показ итогового MessageBox (иконка зависит от успеха).
             service.OnCompleted += (success, msg) => this.Invoke((Action)(() =>
             {
                 AppendLog(txtGenLog, msg);
@@ -62,15 +81,21 @@ namespace STO_WORKBENCH.ZayavkoDrochitel3000
                     success ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
             }));
 
+            // Сам запуск фоновой генерации; async/await позволяет UI оставаться отзывчивым.
             await Task.Run(() => service.Generate(opts, _cts.Token));
         }
 
+        // Обработчик кнопки «Отмена» (генерация): сигналит токену отмены,
+        // а саму кнопку блокирует, чтобы повторные клики не порождали лишних вызовов Cancel.
         private void btnCancelGenerate_Click(object sender, EventArgs e)
         {
             _cts?.Cancel();
             btnCancelGenerate.Enabled = false;
         }
 
+        // Валидация полей вкладки «Генерация»: файл должен существовать,
+        // начальный номер — положительное число, конечный — не меньше начального.
+        // При ошибке показывает MessageBox и возвращает false; при успехе заполняет opts.
         private bool ValidateGenerationInput(out GenerationOptions opts)
         {
             opts = null;
@@ -102,6 +127,8 @@ namespace STO_WORKBENCH.ZayavkoDrochitel3000
             return true;
         }
 
+        // Переключает состояние элементов вкладки «Генерация»:
+        // пока идёт фоновая работа — поля ввода и кнопку запуска блокируем, «Отмену» включаем.
         private void SetGenerateUiRunning(bool running)
         {
             btnGenerate.Enabled = !running;
@@ -114,6 +141,8 @@ namespace STO_WORKBENCH.ZayavkoDrochitel3000
 
         // ===================== ВКЛАДКА "ОТПРАВКА" =====================
 
+        // Обработчик кнопки «Обзор...» рядом с полем папки с готовыми файлами.
+        // Открывает FolderBrowserDialog; при подтверждении пишет путь в txtFilesDir.
         private void btnBrowseDir_Click(object sender, EventArgs e)
         {
             using (var dlg = new FolderBrowserDialog())
@@ -124,6 +153,9 @@ namespace STO_WORKBENCH.ZayavkoDrochitel3000
             }
         }
 
+        // Обработчик кнопки «Отправить письма» (вкладка «Отправка»).
+        // Логика зеркальна btnGenerate_Click: валидация, подготовка прогресса/лога,
+        // подписка на события OutlookService с маршалингом в UI-поток и запуск в Task.Run.
         private async void btnSend_Click(object sender, EventArgs e)
         {
             if (!ValidateSendInput(out var opts)) return;
@@ -160,12 +192,17 @@ namespace STO_WORKBENCH.ZayavkoDrochitel3000
             await Task.Run(() => service.Send(opts, _cts.Token));
         }
 
+        // Обработчик кнопки «Отмена» (отправка): аналог btnCancelGenerate_Click —
+        // отменяет текущую фоновую задачу и блокирует саму себя.
         private void btnCancelSend_Click(object sender, EventArgs e)
         {
             _cts?.Cancel();
             btnCancelSend.Enabled = false;
         }
 
+        // Валидация полей вкладки «Отправка»: папка должна существовать,
+        // номера — положительные и в правильном порядке, обязателен email получателя
+        // (email копии необязателен). При успехе заполняет opts.
         private bool ValidateSendInput(out SendOptions opts)
         {
             opts = null;
@@ -205,6 +242,8 @@ namespace STO_WORKBENCH.ZayavkoDrochitel3000
             return true;
         }
 
+        // Переключает состояние элементов вкладки «Отправка» на время фоновой работы:
+        // блокирует кнопку отправки и все поля, включает кнопку отмены.
         private void SetSendUiRunning(bool running)
         {
             btnSend.Enabled = !running;
@@ -219,12 +258,15 @@ namespace STO_WORKBENCH.ZayavkoDrochitel3000
 
         // ===================== ОБЩИЕ ХЕЛПЕРЫ =====================
 
+        // Дописывает строку в многострочный TextBox-лог с меткой времени [HH:mm:ss]
+        // и прокручивает каретку вниз, чтобы всегда было видно последнее сообщение.
         private static void AppendLog(System.Windows.Forms.TextBox log, string message)
         {
             log.AppendText($"[{DateTime.Now:HH:mm:ss}] {message}{Environment.NewLine}");
             log.ScrollToCaret();
         }
 
+        // Сбрасывает ProgressBar перед началом операции: диапазон 0..total, текущее значение 0.
         private static void PrepareProgress(System.Windows.Forms.ProgressBar bar, int total)
         {
             bar.Minimum = 0;
@@ -232,6 +274,8 @@ namespace STO_WORKBENCH.ZayavkoDrochitel3000
             bar.Value = 0;
         }
 
+        // Пустой обработчик клика по метке lblGenEnd (автогенерированный дизайнером,
+        // подписка висит в Designer.cs). Осознанно ничего не делает — оставлен для совместимости.
         private void lblGenEnd_Click(object sender, EventArgs e)
         {
 

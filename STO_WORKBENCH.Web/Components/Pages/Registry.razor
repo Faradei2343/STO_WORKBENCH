@@ -1,0 +1,189 @@
+@page "/registry"
+
+@inject WebSettingsStore SettingsStore
+@inject DownloadRegistry Downloads
+
+<PageTitle>Сервисные листы — Реестр</PageTitle>
+
+<h1 class="sb-page-title">📄 Сервисные листы — Реестр</h1>
+<p class="sb-page-subtitle">Построение реестров передачи СЛ из файлов детализации det_*.xls</p>
+
+<div class="sb-card">
+    <h3>Параметры построения</h3>
+    <div class="sb-grid sb-cols-3">
+        <div class="sb-field">
+            <label>Отчётный период</label>
+            <input class="sb-input" @bind="_period" disabled="@_busy" />
+        </div>
+        <div class="sb-field">
+            <label>Название проекта</label>
+            <input class="sb-input" @bind="_project" disabled="@_busy" />
+        </div>
+        <div class="sb-field">
+            <label>Папка с det_*.xls</label>
+            <input class="sb-input" @bind="_folder" disabled="@_busy" placeholder="C:\Data\det" />
+        </div>
+    </div>
+    <p class="sb-hint">Отчётный период и название проекта обязательны. Папка должна содержать файлы det_*.xls.</p>
+
+    <div class="sb-toolbar">
+        <button class="sb-btn sb-btn-primary" @onclick="BuildAsync" disabled="@_busy">▶ Создать реестры</button>
+        @if (_busy)
+        {
+            <span class="sb-badge sb-badge-info">Выполняется…</span>
+        }
+    </div>
+
+    @if (!string.IsNullOrEmpty(_alert))
+    {
+        <div class="sb-alert @_alertClass">@_alert</div>
+    }
+    @if (!string.IsNullOrEmpty(_downloadId))
+    {
+        <div class="sb-alert sb-alert-success">
+            Создано реестров: @_createdCount. <a href="/download/@_downloadId">Скачать архив ZIP</a>
+        </div>
+    }
+</div>
+
+<div class="sb-card">
+    <h3>Лог</h3>
+    <LogPanel Lines="@_log" />
+</div>
+
+@code {
+    private string _period = string.Empty;
+    private string _project = string.Empty;
+    private string _folder = string.Empty;
+    private readonly List<string> _log = new();
+    private bool _busy;
+    private string? _alert;
+    private string? _alertClass;
+    private string? _downloadId;
+    private int _createdCount;
+
+    protected override void OnInitialized()
+    {
+        var settings = SettingsStore.Load();
+        _period = settings.RegistryLastPeriod;
+        _project = settings.RegistryLastProject;
+        _folder = settings.RegistryLastFolder;
+    }
+
+    private void Log(string message)
+    {
+        lock (_log)
+        {
+            _log.Add(message);
+        }
+        try
+        {
+            _ = InvokeAsync(StateHasChanged);
+        }
+        catch (InvalidOperationException)
+        {
+            // компонент уже освобождён
+        }
+    }
+
+    private async Task BuildAsync()
+    {
+        _alert = null;
+        _alertClass = null;
+        _downloadId = null;
+
+        string period = _period.Trim();
+        string project = _project.Trim();
+        string folder = _folder.Trim();
+
+        if (string.IsNullOrEmpty(period))
+        {
+            _alert = "Введите отчётный период.";
+            _alertClass = "sb-alert-warning";
+            return;
+        }
+
+        if (string.IsNullOrEmpty(project))
+        {
+            _alert = "Введите название проекта.";
+            _alertClass = "sb-alert-warning";
+            return;
+        }
+
+        if (string.IsNullOrEmpty(folder) || !Directory.Exists(folder))
+        {
+            _alert = "Папка не выбрана или не существует.";
+            _alertClass = "sb-alert-error";
+            return;
+        }
+
+        var settings = SettingsStore.Load();
+        settings.RegistryLastPeriod = period;
+        settings.RegistryLastProject = project;
+        settings.RegistryLastFolder = folder;
+        SettingsStore.Save(settings);
+
+        _busy = true;
+        lock (_log)
+        {
+            _log.Clear();
+        }
+        StateHasChanged();
+
+        string? tempDir = null;
+        try
+        {
+            await Task.Run(() =>
+            {
+                tempDir = Path.Combine(Path.GetTempPath(), $"SLRegistry_{Guid.NewGuid():N}");
+                Directory.CreateDirectory(tempDir);
+
+                var builder = new RegistryBuilder(Log);
+                var created = builder.BuildAll(folder, period, project, tempDir);
+
+                if (created != null && created.Count > 0)
+                {
+                    _createdCount = created.Count;
+                    byte[] zipBytes = CreateZip(created);
+                    string zipName = $"Реестры {period} {project} {DateTime.Now:yyyy-MM-dd}.zip";
+                    _downloadId = Downloads.Add(zipBytes, zipName, "application/zip");
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            Log($"!!Ошибка: {ex.Message}");
+        }
+        finally
+        {
+            _busy = false;
+            if (tempDir != null)
+            {
+                try { Directory.Delete(tempDir, true); }
+                catch { }
+            }
+        }
+
+        if (_downloadId == null)
+        {
+            _alert = "Не удалось создать ни одного реестра.";
+            _alertClass = "sb-alert-error";
+        }
+    }
+
+    private static byte[] CreateZip(List<string> files)
+    {
+        using var ms = new MemoryStream();
+        using (var archive = new System.IO.Compression.ZipArchive(ms, System.IO.Compression.ZipArchiveMode.Create, true))
+        {
+            foreach (string file in files)
+            {
+                var entry = archive.CreateEntry(Path.GetFileName(file));
+                using var entryStream = entry.Open();
+                using var fileStream = File.OpenRead(file);
+                fileStream.CopyTo(entryStream);
+            }
+        }
+        return ms.ToArray();
+    }
+}

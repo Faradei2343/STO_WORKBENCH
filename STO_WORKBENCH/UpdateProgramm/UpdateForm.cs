@@ -1,4 +1,4 @@
-﻿using STO_WORKBENCH.Core;
+using STO_WORKBENCH.Core;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -9,11 +9,18 @@ using System.Windows.Forms;
 
 namespace STO_WORKBENCH.UpdateProgramm
 {
+    // Форма автообновления программы: показывает информацию о найденном релизе
+    // (текущая версия, тег новой версии, описание изменений) и предлагает либо
+    // скачать и установить обновление с индикацией прогресса, либо пропустить его.
     public partial class UpdateForm : Form
     {
+        // Сведения о доступном релизе (тег версии, заметки "Что нового").
         private readonly ReleaseInfo _release;
+        // Сервис загрузки и установки обновлений (определён в STO_WORKBENCH.Core).
         private readonly UpdateService _service;
 
+        // Конструктор: запоминает релиз и сервис, создаёт контролы формы
+        // и заполняет надписи версией, тегом релиза и заметками.
         public UpdateForm(ReleaseInfo release, UpdateService service)
         {
             _release = release;
@@ -22,8 +29,11 @@ namespace STO_WORKBENCH.UpdateProgramm
             InitializeComponent();
 
             // Заполняем данные релиза после InitializeComponent
+            // Текущая версия программы берётся из сервиса обновлений.
             lblCurrentVersion.Text = $"Установлена версия: {UpdateService.GetCurrentVersion()}";
+            // Тег нового релиза (например "v1.2.3") — в бейдж версии.
             lblVersionBadge.Text = _release.TagName;
+            // Заметки релиза; если они пустые — показываем заглушку.
             rtbNotes.Text = string.IsNullOrWhiteSpace(_release.Notes)
                                          ? "Описание для этого релиза не указано."
                                          : _release.Notes;

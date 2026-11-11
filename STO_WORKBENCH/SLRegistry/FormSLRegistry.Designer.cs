@@ -1,9 +1,16 @@
-﻿namespace STO_WORKBENCH.SLRegistry
+namespace STO_WORKBENCH.SLRegistry
 {
+    // Автогенерируемая часть (аналог файла дизайнера VS) формы построения реестров.
+    // Весь интерфейс создаётся кодом в методе InitializeComponent без использования .resx-файла:
+    // шапка с заголовком, панель параметров (период, проект, путь), кнопка запуска и лог.
     partial class FormSLRegistry
     {
+        // Контейнер компонентов — хранит компоненты с неуправляемыми ресурсами (диалоги)
+        // для их корректного освобождения в методе Dispose
         private System.ComponentModel.IContainer components = null;
 
+        // Освобождение ресурсов формы: при явном вызове Dispose уничтожаем компоненты
+        // контейнера, затем передаём управление базовому классу Form
         protected override void Dispose(bool disposing)
         {
             if (disposing && (components != null))
@@ -11,8 +18,13 @@
             base.Dispose(disposing);
         }
 
+        // Создание и настройка всех элементов интерфейса формы.
+        // Порядок важен: сначала создаются все контролы, затем приостанавливается
+        // компоновка (SuspendLayout), настраиваются свойства, контролы добавляются
+        // в родительские панели и в конце компоновка возобновляется (ResumeLayout).
         private void InitializeComponent()
         {
+            // Создание экземпляров всех контролов формы
             panelTop = new System.Windows.Forms.Panel();
             lblTitle = new System.Windows.Forms.Label();
             lblSubtitle = new System.Windows.Forms.Label();

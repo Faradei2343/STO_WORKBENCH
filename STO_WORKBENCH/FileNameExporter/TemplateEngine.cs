@@ -1,11 +1,23 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Text.RegularExpressions;
 
 namespace STO_WORKBENCH.FileNameExporter
 {
+    // Статический движок шаблонов имени файла (состояния не хранит).
+    // Поддерживаемые плейсхолдеры внутри шаблона:
+    //   {file}  — исходное имя файла с расширением;
+    //   {name}  — имя без расширения;
+    //   {ext}   — расширение (с точкой);
+    //   {N} / {N:start:length} — N-я часть имени, разрезанного по separator;
+    //   {name:start:length}    — подстрока имени без расширения;
+    //   {match:regex[:group]}  — результат regex-поиска по имени (без учёта регистра).
     public static class TemplateEngine
     {
+        // Применяет шаблон template к имени файла fileName и возвращает итоговую строку.
+        // separator — разделитель, по которому имя режется на части для плейсхолдеров {N}.
+        // Пустой шаблон даёт пустую строку; плейсхолдеры с индексами вне диапазона
+        // и ошибочные regex заменяются пустотой, а не выбрасывают исключение.
         public static string ApplyTemplate(
             string fileName,
             string template,
